@@ -1,6 +1,9 @@
 {
-  "name": "Remix: HireNestOS — OmniMail Engine",
-  "description": "An AI-powered email ingestion connector that parses incoming emails and forwards them to integrated AI agents and OS workflows.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "name": "HireNestOS - AI Talent Intelligence Operating System",
+  "description": "An AI-native recruitment intelligence platform for high-performance staffing teams. Features centralized email ingestion, automated talent extraction, AI match scoring, and strategic outreach automation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
 }
