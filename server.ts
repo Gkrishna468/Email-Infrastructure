@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import cors from 'cors';
 import crypto from 'crypto';
 import path from 'path';
@@ -19,6 +18,15 @@ async function startServer() {
 
   // Wait for the DB to be initialized conceptually, though better-sqlite3 is sync
   
+  // Root path for basic health/operational check
+  app.get('/', (_, res) => {
+    res.json({
+      status: "HireNestOS OmniMail API Operational",
+      version: "1.0.0",
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date() });
@@ -235,6 +243,7 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
