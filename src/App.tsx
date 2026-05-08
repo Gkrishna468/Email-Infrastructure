@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Mail, Webhook, Settings, Activity, Plus, Search, Trash2, ShieldCheck, MailOpen, CheckCircle2, Clock, Navigation
 } from 'lucide-react';
+import { API_URL } from './config/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -57,21 +58,21 @@ export default function App() {
 
   const fetchEmails = async () => {
     try {
-      const res = await fetch('/api/emails');
+      const res = await fetch(`${API_URL}/api/emails`);
       if (res.ok) setEmails(await res.json());
     } catch (e) {}
   };
 
   const fetchWebhooks = async () => {
     try {
-      const res = await fetch('/api/webhooks');
+      const res = await fetch(`${API_URL}/api/webhooks`);
       if (res.ok) setWebhooks(await res.json());
     } catch (e) {}
   };
 
   const checkGmailStatus = async () => {
     try {
-      const res = await fetch('/api/gmail/status');
+      const res = await fetch(`${API_URL}/api/gmail/status`);
       if (res.ok) {
         const data = await res.json();
         setIsGmailConnected(data.connected);
@@ -81,7 +82,7 @@ export default function App() {
 
   const handleConnectGmail = async () => {
     try {
-      const res = await fetch('/auth/google');
+      const res = await fetch(`${API_URL}/auth/google`);
       if (res.ok) {
         const { url } = await res.json();
         const authWindow = window.open(url, 'oauth_popup', 'width=600,height=700');
@@ -106,7 +107,7 @@ export default function App() {
 
   const handleFetchGmail = async () => {
     try {
-      const res = await fetch('/api/gmail/fetch', { method: 'POST' });
+      const res = await fetch(`${API_URL}/api/gmail/fetch`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         if (data.count > 0) {
@@ -132,7 +133,7 @@ export default function App() {
   const handleAddWebhook = async () => {
     if (!newWebhookName || !newWebhookUrl) return;
     try {
-      const res = await fetch('/api/webhooks', {
+      const res = await fetch(`${API_URL}/api/webhooks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newWebhookName, url: newWebhookUrl })
@@ -147,12 +148,12 @@ export default function App() {
   };
 
   const handleToggleWebhook = async (id: string) => {
-    await fetch(`/api/webhooks/${id}/toggle`, { method: 'PUT' });
+    await fetch(`${API_URL}/api/webhooks/${id}/toggle`, { method: 'PUT' });
     fetchWebhooks();
   };
 
   const handleDeleteWebhook = async (id: string) => {
-    await fetch(`/api/webhooks/${id}`, { method: 'DELETE' });
+    await fetch(`${API_URL}/api/webhooks/${id}`, { method: 'DELETE' });
     fetchWebhooks();
   };
 
@@ -177,7 +178,7 @@ export default function App() {
 
   const handleUpdateInteraction = async (emailId: string, updates: any) => {
     try {
-      const res = await fetch(`/api/emails/${emailId}/interaction`, {
+      const res = await fetch(`${API_URL}/api/emails/${emailId}/interaction`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -199,7 +200,7 @@ export default function App() {
     ];
     const random = fakeEmails[Math.floor(Math.random() * fakeEmails.length)];
     
-    await fetch('/api/webhooks/ingress', {
+    await fetch(`${API_URL}/api/webhooks/ingress`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(random)

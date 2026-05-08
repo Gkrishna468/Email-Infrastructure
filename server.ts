@@ -13,7 +13,14 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 8080;
 
-  app.use(cors());
+  app.use(cors({
+    origin: [
+      "https://app.hirenestworkforce.com",
+      "http://localhost:5173",
+      process.env.APP_URL || ""
+    ].filter(Boolean),
+    credentials: true
+  }));
   app.use(express.json());
 
   // Wait for the DB to be initialized conceptually, though better-sqlite3 is sync
