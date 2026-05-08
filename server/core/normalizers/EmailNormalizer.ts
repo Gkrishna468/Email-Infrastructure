@@ -1,3 +1,5 @@
+import { convert } from 'html-to-text';
+
 export class EmailNormalizer {
   static normalize(gmailMessage: any) {
     const payload = gmailMessage.payload;
@@ -15,14 +17,38 @@ export class EmailNormalizer {
       }
     }
 
-    let body = "";
-    if (payload.parts && payload.parts.length > 0) {
-      const part = payload.parts.find((p: any) => p.mimeType === 'text/plain');
-      if (part && part.body && part.body.data) {
-        body = Buffer.from(part.body.data, 'base64').toString('utf8');
+    let bodyText = "";
+    let bodyHtml = "";
+
+    const extractBody = (part: any) => {
+      if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+        bodyText = Buffer.from(part.body.data, 'base64').toString('utf8');
+      } else if (part.mimeType === 'text/html' && part.body && part.body.data) {
+        bodyHtml = Buffer.from(part.body.data, 'base64').toString('utf8');
+      } else if (part.parts) {
+        part.parts.forEach(extractBody);
       }
+    };
+
+    if (payload.parts) {
+      payload.parts.forEach(extractBody);
     } else if (payload.body && payload.body.data) {
-      body = Buffer.from(payload.body.data, 'base64').toString('utf8');
+      if (payload.mimeType === 'text/plain') {
+        bodyText = Buffer.from(payload.body.data, 'base64').toString('utf8');
+      } else if (payload.mimeType === 'text/html') {
+        bodyHtml = Buffer.from(payload.body.data, 'base64').toString('utf8');
+      }
+    }
+
+    // If we only have HTML, convert it to text for the AI
+    if (!bodyText && bodyHtml) {
+      bodyText = convert(bodyHtml, {
+        wordwrap: 130,
+        selectors: [
+          { selector: 'a', options: { ignoreHref: true } },
+          { selector: 'img', format: 'skip' }
+        ]
+      });
     }
 
     return {
@@ -30,7 +56,8 @@ export class EmailNormalizer {
       threadId: gmailMessage.threadId,
       subject,
       from,
-      bodyText: body,
+      bodyText,
+      bodyHtml: bodyHtml || undefined,
       receivedAt: new Date(parseInt(gmailMessage.internalDate)).toISOString(),
       source: "gmail"
     };

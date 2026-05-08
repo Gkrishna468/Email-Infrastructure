@@ -27,11 +27,25 @@ type Email = {
     status: "Safe" | "Spam" | "Phishing";
     reason?: string;
   };
+  match_score?: {
+    score: number;
+    gaps: string[];
+    reasoning: string;
+  } | null;
+  vendor_intelligence?: {
+    isKnownVendor: boolean;
+    submissionQuality: "High" | "Medium" | "Low";
+    spamLikelihood: number;
+  } | null;
   metadata?: {
     role?: string | null;
     budget?: string | null;
     candidate_name?: string | null;
     vendor_name?: string | null;
+    experienceYears?: number | null;
+    noticePeriodDays?: number | null;
+    expectedCTC?: string | null;
+    hasResume?: boolean | null;
   } | null;
   received_at: string;
   status: string;
@@ -599,18 +613,137 @@ export default function App() {
                           </p>
                         </div>
 
-                        {selectedEmail.metadata && Object.values(selectedEmail.metadata).some(val => val !== null) && (
-                          <div>
-                             <h4 className="text-sm font-bold text-slate-900 mb-3">Extracted Entities</h4>
-                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                               {Object.entries(selectedEmail.metadata).map(([key, value]) => value ? (
-                                  <div key={key} className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex flex-col shadow-sm">
-                                    <span className="text-[10px] uppercase font-bold text-indigo-500/80 tracking-wider mb-1">{key.replace('_', ' ')}</span>
-                                    <span className="text-sm font-semibold text-indigo-950">{value}</span>
+                        {/* Top Signals Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Card className="border-slate-200 shadow-sm overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-slate-50 bg-slate-50/50">
+                              <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-slate-500">
+                                <Activity className="w-3 h-3 text-indigo-600" />
+                                AI Match Analytics
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                              {selectedEmail.match_score ? (
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center font-black text-sm shrink-0 ${
+                                      selectedEmail.match_score.score > 80 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                                      selectedEmail.match_score.score > 50 ? 'border-amber-500 text-amber-700 bg-amber-50' :
+                                      'border-rose-500 text-rose-700 bg-rose-50'
+                                    }`}>
+                                      {selectedEmail.match_score.score}%
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-slate-700 font-bold leading-tight">{selectedEmail.match_score.reasoning}</p>
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {selectedEmail.match_score.gaps.slice(0, 3).map((gap, i) => (
+                                          <Badge key={i} variant="outline" className="text-[9px] bg-rose-50/50 text-rose-600 border-rose-100 py-0 px-1">
+                                            {gap}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
                                   </div>
-                               ) : null)}
-                             </div>
-                          </div>
+                                </div>
+                              ) : (
+                                <div className="py-2 text-center text-slate-400 text-[10px] italic">
+                                  Standard Triage Mode (No Match Required)
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+
+                          <Card className="border-slate-200 shadow-sm overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-slate-50 bg-slate-50/50">
+                              <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-slate-500">
+                                <ShieldCheck className="w-3 h-3 text-blue-600" />
+                                Vendor Intelligence
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                              {selectedEmail.vendor_intelligence ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Trust Level</p>
+                                    <div className="flex items-center gap-1">
+                                      <div className={`w-2 h-2 rounded-full ${selectedEmail.vendor_intelligence.isKnownVendor ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                      <span className="text-xs font-bold">{selectedEmail.vendor_intelligence.isKnownVendor ? 'Verified' : 'Cold'}</span>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Quality</p>
+                                    <span className="text-xs font-bold text-indigo-600">{selectedEmail.vendor_intelligence.submissionQuality}</span>
+                                  </div>
+                                  <div className="col-span-2">
+                                     <div className="flex justify-between items-center mb-1">
+                                      <p className="text-[9px] font-bold text-slate-400 uppercase">Spam Risk</p>
+                                      <span className="text-[9px] font-bold text-slate-600">{Math.round(selectedEmail.vendor_intelligence.spamLikelihood * 100)}%</span>
+                                     </div>
+                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full ${selectedEmail.vendor_intelligence.spamLikelihood > 0.4 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                        style={{ width: `${selectedEmail.vendor_intelligence.spamLikelihood * 100}%` }}
+                                      />
+                                     </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="py-2 text-center text-slate-400 text-[10px] italic">
+                                  Historical Analytics Pending
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {selectedEmail.metadata && Object.values(selectedEmail.metadata).some(val => val !== null) && (
+                          <Card className="border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
+                             <CardHeader className="pb-2 bg-slate-50/30">
+                               <CardTitle className="text-xs font-bold text-slate-600 uppercase tracking-tight">Recruitment Signal Extraction</CardTitle>
+                             </CardHeader>
+                             <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
+                               {selectedEmail.metadata.candidate_name && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Candidate</p>
+                                   <p className="text-xs font-bold text-slate-900 truncate">{selectedEmail.metadata.candidate_name}</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.role && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Role</p>
+                                   <p className="text-xs font-bold text-slate-900 truncate">{selectedEmail.metadata.role}</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.experienceYears && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Exp.</p>
+                                   <p className="text-xs font-bold text-slate-900">{selectedEmail.metadata.experienceYears} Years</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.expectedCTC && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Exp. CTC</p>
+                                   <p className="text-xs font-bold text-indigo-600">{selectedEmail.metadata.expectedCTC}</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.noticePeriodDays !== undefined && selectedEmail.metadata.noticePeriodDays !== null && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Notice</p>
+                                   <p className="text-xs font-bold text-slate-900">{selectedEmail.metadata.noticePeriodDays} Days</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.skills && (
+                                 <div className="col-span-2 bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Tech Stack</p>
+                                   <div className="flex flex-wrap gap-1">
+                                     {(typeof selectedEmail.metadata.skills === 'string' ? JSON.parse(selectedEmail.metadata.skills) as string[] : selectedEmail.metadata.skills as string[]).map((s, i) => (
+                                       <span key={i} className="text-[10px] font-medium bg-slate-100 px-1 rounded text-slate-700">{s}</span>
+                                     ))}
+                                   </div>
+                                 </div>
+                               )}
+                             </CardContent>
+                          </Card>
                         )}
 
                         {selectedEmail.action_items && selectedEmail.action_items.length > 0 && (

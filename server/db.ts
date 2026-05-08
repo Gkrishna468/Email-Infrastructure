@@ -64,4 +64,12 @@ try {
   db.exec('ALTER TABLE emails ADD COLUMN security_reason TEXT;');
 } catch (e) {}
 
+try {
+  db.exec('ALTER TABLE emails ADD COLUMN match_score TEXT;');
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE emails ADD COLUMN vendor_intelligence TEXT;');
+} catch (e) {}
+
 export default db;

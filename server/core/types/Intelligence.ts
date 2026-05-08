@@ -21,6 +21,22 @@ export interface OmniMailIntelligence {
     budgetLPA?: number;
     skills?: string[];
     location?: string;
+    experienceYears?: number;
+    noticePeriodDays?: number;
+    expectedCTC?: string;
+    hasResume?: boolean;
+  };
+
+  matchScore?: {
+    score: number; // 0-100
+    gaps: string[];
+    reasoning: string;
+  };
+
+  vendorIntelligence?: {
+    isKnownVendor: boolean;
+    submissionQuality: "High" | "Medium" | "Low";
+    spamLikelihood: number;
   };
 
   actionItems: string[];

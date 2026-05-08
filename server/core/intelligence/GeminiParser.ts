@@ -76,20 +76,34 @@ Return format:
     "secondary": "any side effect/intent"
   },
   "entities": {
-    "role": "job title",
-    "candidateName": "name of candidate",
+    "role": "extracted job title or role mentioned",
+    "candidateName": "name of candidate if present",
     "vendorName": "company/agency name",
     "budgetLPA": 0,
     "skills": ["skill1", "skill2"],
-    "location": "office/city"
+    "location": "office/city",
+    "experienceYears": 0,
+    "noticePeriodDays": 0,
+    "expectedCTC": "salary expectations",
+    "hasResume": true/false
+  },
+  "matchScore": {
+    "score": 0 to 100,
+    "gaps": ["missing skill x", "notice period too long"],
+    "reasoning": "why this score was given"
+  },
+  "vendorIntelligence": {
+    "isKnownVendor": true/false,
+    "submissionQuality": "High | Medium | Low",
+    "spamLikelihood": 0.0 to 1.0
   },
   "actionItems": [
     "action 1",
     "action 2"
   ],
   "confidence": 0.0 to 1.0,
-  "aiSummary": "Concise executive summary",
-  "outreachDraft": "Strategic professional response draft"
+  "aiSummary": "Executive summary with focus on recruitment signals",
+  "outreachDraft": "Strategic response draft. If it is a candidate submission, include a pre-screen question."
 }
 `;
 

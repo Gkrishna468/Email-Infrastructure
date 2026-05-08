@@ -49,6 +49,8 @@ async function startServer() {
         ...e,
         action_items: e.action_items ? JSON.parse(e.action_items) : [],
         metadata: e.metadata ? JSON.parse(e.metadata) : null,
+        match_score: e.match_score ? JSON.parse(e.match_score) : null,
+        vendor_intelligence: e.vendor_intelligence ? JSON.parse(e.vendor_intelligence) : null,
         security: {
           status: e.security_status,
           reason: e.security_reason

@@ -24,7 +24,7 @@ export class EmailRepository {
     try {
       const update = db.prepare(`
         UPDATE emails 
-        SET summary = ?, action_items = ?, intent = ?, metadata = ?, outreach_draft = ?, status = ?, priority = ?, security_status = ?, security_reason = ?
+        SET summary = ?, action_items = ?, intent = ?, metadata = ?, outreach_draft = ?, status = ?, priority = ?, security_status = ?, security_reason = ?, match_score = ?, vendor_intelligence = ?
         WHERE id = ?
       `);
       
@@ -38,6 +38,8 @@ export class EmailRepository {
         intelligence.priority || 'To Read',
         intelligence.security?.status || 'Safe',
         intelligence.security?.reason || null,
+        JSON.stringify(intelligence.matchScore || null),
+        JSON.stringify(intelligence.vendorIntelligence || null),
         id
       );
     } catch(e) {
