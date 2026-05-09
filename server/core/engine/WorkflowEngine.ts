@@ -1,12 +1,9 @@
-import db from '../../db.js';
+import { WebhookRepository } from '../storage/WebhookRepository.js';
 import { ConnectorRouter } from '../routing/ConnectorRouter.js';
 
 export class WorkflowEngine {
-
   static async route(email: any, intelligence: any) {
-
-    const workflow =
-      intelligence.intent?.primary || "general";
+    const workflow = intelligence.intent?.primary || "general";
 
     let eventType = "general";
     let assignedTo: string | null = null;
@@ -82,7 +79,7 @@ export class WorkflowEngine {
     };
 
     // Get active webhooks
-    const webhooks = db.prepare('SELECT * FROM webhooks WHERE active = 1').all() as any[];
+    const webhooks = await WebhookRepository.getConfiguredWebhooks();
     
     // Dispatch to all active webhooks
     for (const webhook of webhooks) {

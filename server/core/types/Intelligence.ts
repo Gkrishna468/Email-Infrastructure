@@ -1,7 +1,7 @@
 export interface OmniMailIntelligence {
   workflowType: string;
 
-  priority: "Urgent" | "Important" | "To Read" | "Archived";
+  priority: "Urgent" | "Client Req" | "Vendor Submission" | "Interview" | "Follow-up" | "Important" | "To Read" | "Archived" | "Spam" | "Phishing";
 
   security: {
     status: "Safe" | "Spam" | "Phishing";

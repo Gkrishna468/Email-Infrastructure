@@ -3,11 +3,13 @@ import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import path from 'path';
-import db from './server/db.js';
+import { EmailRepository } from './server/core/storage/EmailRepository.js';
+import { WebhookRepository } from './server/core/storage/WebhookRepository.js';
 
 import { getAuthUrl, getOAuth2Client, saveTokens, getTokens } from './server/auth/google.js';
 import { GoogleWorkspaceConnector } from './server/core/connectors/GoogleWorkspaceConnector.js';
 import { OmniMailEngine } from './server/core/engine/OmniMailEngine.js';
+import { getFirestoreAdmin } from './server/firebaseAdmin.js';
 
 async function startServer() {
   const app = express();
@@ -40,23 +42,10 @@ async function startServer() {
   });
 
   // Fetch emails
-  app.get('/api/emails', (req, res) => {
+  app.get('/api/emails', async (req, res) => {
     try {
-      const stmt = db.prepare('SELECT * FROM emails ORDER BY received_at DESC');
-      const emails = stmt.all();
-      // Parse JSON from action_items and metadata
-      const parsedEmails = emails.map((e: any) => ({
-        ...e,
-        action_items: e.action_items ? JSON.parse(e.action_items) : [],
-        metadata: e.metadata ? JSON.parse(e.metadata) : null,
-        match_score: e.match_score ? JSON.parse(e.match_score) : null,
-        vendor_intelligence: e.vendor_intelligence ? JSON.parse(e.vendor_intelligence) : null,
-        security: {
-          status: e.security_status,
-          reason: e.security_reason
-        }
-      }));
-      res.json(parsedEmails);
+      const emails = await EmailRepository.getAll();
+      res.json(emails);
     } catch (err) {
       console.error("DB error", err);
       res.status(500).json({ error: "Failed to fetch emails" });
@@ -64,21 +53,34 @@ async function startServer() {
   });
 
   // Feedback and Interaction History
-  app.post('/api/emails/:id/interaction', (req, res) => {
+  app.post('/api/emails/:id/interaction', async (req, res) => {
     try {
       const { id } = req.params;
       const { action, feedback, priority, security_status } = req.body;
 
-      // 1. Log to history
-      const stmtHistory = db.prepare('INSERT INTO interaction_history (email_id, action, user_feedback) VALUES (?, ?, ?)');
-      stmtHistory.run(id, action, feedback || null);
+      // 1. Log to history (Interactions)
+      const coll = getFirestoreAdmin().collection('interactions');
+      await coll.add({
+        email_id: id,
+        action,
+        user_feedback: feedback || null,
+        created_at: new Date().toISOString()
+      });
 
       // 2. Update email if requested
-      if (priority) {
-        db.prepare('UPDATE emails SET priority = ? WHERE id = ?').run(priority, id);
-      }
+      const emailRef = getFirestoreAdmin().collection('emails').doc(id);
+      const updates: any = {};
+      
+      if (priority) updates.priority = priority;
       if (security_status) {
-        db.prepare('UPDATE emails SET security_status = ? WHERE id = ?').run(security_status, id);
+        updates.security = {
+          status: security_status,
+          reason: feedback || 'User override'
+        };
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        await emailRef.update(updates);
       }
 
       res.json({ success: true });
@@ -186,15 +188,18 @@ async function startServer() {
 
   app.post('/api/gmail/fetch', async (req, res) => {
     try {
-      const emails = await GoogleWorkspaceConnector.fetchLatestEmails(50);
+      const limit = Number(req.query.limit) || 50;
+      const emails = await GoogleWorkspaceConnector.fetchLatestEmails(limit);
+      
+      const firestore = getFirestoreAdmin();
       
       // Process emails via OmniMail Engine
       for (const email of emails) {
         // Quick check if email already exists
-        const stmt = db.prepare('SELECT id FROM emails WHERE id = ?');
-        const exists = stmt.get(email.messageId);
+        const docRef = firestore.collection('emails').doc(email.messageId);
+        const doc = await docRef.get();
         
-        if (!exists) {
+        if (!doc.exists) {
           await OmniMailEngine.process(email);
         }
       }
@@ -207,42 +212,38 @@ async function startServer() {
   });
 
   // Manage Webhooks
-  app.get('/api/webhooks', (req, res) => {
+  app.get('/api/webhooks', async (req, res) => {
     try {
-      const stmt = db.prepare('SELECT * FROM webhooks ORDER BY created_at DESC');
-      res.json(stmt.all());
+      const webhooks = await WebhookRepository.getAll();
+      res.json(webhooks);
     } catch (err) {
       res.status(500).json({ error: "error fetching webhooks" });
     }
   });
 
-  app.post('/api/webhooks', (req, res) => {
+  app.post('/api/webhooks', async (req, res) => {
     try {
       const { name, url } = req.body;
       if (!name || !url) return res.status(400).json({ error: "Missing name or url" });
-      const id = crypto.randomUUID();
-      const stmt = db.prepare('INSERT INTO webhooks (id, name, url) VALUES (?, ?, ?)');
-      stmt.run(id, name, url);
-      res.json({ id, name, url, active: 1 });
+      const webhook = await WebhookRepository.create(name, url);
+      res.json(webhook);
     } catch (err) {
       res.status(500).json({ error: "Failed to create webhook" });
     }
   });
 
-  app.delete('/api/webhooks/:id', (req, res) => {
+  app.delete('/api/webhooks/:id', async (req, res) => {
     try {
-      const stmt = db.prepare('DELETE FROM webhooks WHERE id = ?');
-      stmt.run(req.params.id);
+      await WebhookRepository.delete(req.params.id);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: "Failed to delete webhook" });
     }
   });
 
-  app.put('/api/webhooks/:id/toggle', (req, res) => {
+  app.put('/api/webhooks/:id/toggle', async (req, res) => {
     try {
-      const stmt = db.prepare('UPDATE webhooks SET active = NOT active WHERE id = ?');
-      stmt.run(req.params.id);
+      await WebhookRepository.toggle(req.params.id);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: "Failed to toggle webhook" });

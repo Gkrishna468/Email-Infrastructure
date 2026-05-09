@@ -1,49 +1,56 @@
-import db from '../../db.js';
+import { getFirestoreAdmin } from '../../firebaseAdmin.js';
 
 export class EmailRepository {
+  private static getCollection() {
+    return getFirestoreAdmin().collection('emails');
+  }
+
   static async store(payload: any) {
-    const insert = db.prepare(`
-      INSERT INTO emails (id, subject, sender, body, status, received_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO NOTHING
-    `);
-    
-    insert.run(
-      payload.messageId,
-      payload.subject || 'No Subject',
-      payload.from,
-      payload.bodyText,
-      'pending',
-      payload.receivedAt || new Date().toISOString()
-    );
+    const coll = this.getCollection();
+    const docRef = coll.doc(payload.messageId);
+
+    const emailData = {
+      id: payload.messageId,
+      subject: payload.subject || 'No Subject',
+      sender: payload.from,
+      body: payload.bodyText,
+      status: 'pending',
+      received_at: payload.receivedAt || new Date().toISOString()
+    };
+
+    await docRef.set(emailData, { merge: true });
 
     return { id: payload.messageId, ...payload };
   }
 
   static async attachIntelligence(id: string, intelligence: any) {
     try {
-      const update = db.prepare(`
-        UPDATE emails 
-        SET summary = ?, action_items = ?, intent = ?, metadata = ?, outreach_draft = ?, status = ?, priority = ?, security_status = ?, security_reason = ?, match_score = ?, vendor_intelligence = ?
-        WHERE id = ?
-      `);
-      
-      update.run(
-        intelligence.aiSummary,
-        JSON.stringify(intelligence.actionItems || []),
-        intelligence.intent?.primary || 'unknown',
-        JSON.stringify(intelligence.entities || {}),
-        intelligence.outreachDraft || null,
-        'integrated',
-        intelligence.priority || 'To Read',
-        intelligence.security?.status || 'Safe',
-        intelligence.security?.reason || null,
-        JSON.stringify(intelligence.matchScore || null),
-        JSON.stringify(intelligence.vendorIntelligence || null),
-        id
-      );
+      const coll = this.getCollection();
+      const docRef = coll.doc(id);
+
+      await docRef.update({
+        summary: intelligence.aiSummary,
+        action_items: intelligence.actionItems || [],
+        intent: intelligence.intent?.primary || 'unknown',
+        metadata: intelligence.entities || {},
+        outreach_draft: intelligence.outreachDraft || null,
+        status: 'integrated',
+        priority: intelligence.priority || 'To Read',
+        security: {
+          status: intelligence.security?.status || 'Safe',
+          reason: intelligence.security?.reason || null
+        },
+        match_score: intelligence.matchScore || null,
+        vendor_intelligence: intelligence.vendorIntelligence || null
+      });
     } catch(e) {
       console.error('Failed to attach intelligence to email:', id, e);
     }
+  }
+
+  static async getAll() {
+    const coll = this.getCollection();
+    const snapshot = await coll.orderBy('received_at', 'desc').get();
+    return snapshot.docs.map(doc => doc.data());
   }
 }

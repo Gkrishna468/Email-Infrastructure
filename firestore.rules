@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Primitives & Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Validation Blueprints
+    function isValidEmail(data) {
+      return data.keys().hasAll(['id', 'subject', 'sender', 'received_at'])
+        && data.id is string && data.id.size() <= 128
+        && data.subject is string && data.subject.size() <= 1000
+        && data.sender is string && data.sender.size() <= 500
+        && data.received_at is string
+        && (data.get('priority', 'To Read') in ['Urgent', 'Client Req', 'Vendor Submission', 'Interview', 'Follow-up', 'Important', 'To Read', 'Archived', 'Spam', 'Phishing'])
+        && (!data.keys().contains('action_items') || (data.action_items is list && data.action_items.size() <= 20));
+    }
+
+    function isValidWebhook(data) {
+      return data.keys().hasAll(['id', 'name', 'url', 'active'])
+        && data.id is string
+        && data.name is string && data.name.size() <= 100
+        && data.url is string && data.url.size() <= 2083
+        && data.active is bool;
+    }
+
+    function isValidInteraction(data) {
+      return data.keys().hasAll(['email_id', 'action', 'created_at'])
+        && data.email_id is string
+        && data.action is string && data.action.size() <= 100
+        && data.created_at is string;
+    }
+
+    // 1. Path Variable Matches
+    match /emails/{emailId} {
+      allow read: if isVerified();
+      allow create: if isVerified() && isValidId(emailId) && isValidEmail(incoming());
+      allow update: if isVerified() && isValidEmail(incoming()) && (
+        // Action: Triage (Priority change)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['priority', 'status', 'interaction_feedback'])) ||
+        // Action: Security Override
+        (incoming().diff(existing()).affectedKeys().hasOnly(['security', 'status']))
+      );
+      allow delete: if isVerified();
+    }
+
+    match /webhooks/{webhookId} {
+      allow read: if isVerified();
+      allow create: if isVerified() && isValidId(webhookId) && isValidWebhook(incoming());
+      allow update: if isVerified() && isValidWebhook(incoming());
+      allow delete: if isVerified();
+    }
+
+    match /interactions/{interactionId} {
+      allow read: if isVerified();
+      allow create: if isVerified() && isValidId(interactionId) && isValidInteraction(incoming());
+    }
+  }
+}

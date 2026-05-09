@@ -40,16 +40,35 @@ Your task is to provide ADVANCED email filtering and security analysis.
 Analyze this email accurately based on content, sender, and historical user interaction patterns.
 
 CATEGORIZATION RULES:
-- Urgent: Requires immediate response or action (e.g., final round interview scheduling, urgent hiring requests).
-- Important: High business value but maybe not time-sensitive (e.g., quality candidates, new RFPs).
-- To Read: General info, news, or low-priority updates.
-- Archived: Newsletter, automated bot mails, or promotional content.
+- Urgent: Immediate action needed/Revenue opportunity (e.g., offer acceptance, urgent client req).
+- Client Req: Strategic client request or new job opening.
+- Vendor Submission: Agency sending candidate profiles.
+- Interview: Scheduling or feedback related.
+- Follow-up: Existing thread needing attention.
+- Important: High-value info, but not time-critical.
+- To Read: General news, low-priority updates.
+- Archived: Promo, newsletters, bot mail.
+- Spam/Phishing: Security risks.
+
+EXECUTIVE SNAPSHOT RULES:
+The 'aiSummary' MUST be a high-density executive snapshot. 
+Format:
+- One sentence overview.
+- Match Confidence: X% (if candidate submission)
+- Key Strengths: bullet points
+- Critical Gaps: bullet points
+- Recommended Action: clear next step.
 
 SECURITY RULES:
 - Flag as 'Phishing' if the sender looks suspicious, asks for sensitive info, or contains deceptive links.
 - Flag as 'Spam' if it is unsolicited bulk commercial content.
 - Flag as 'Safe' otherwise.
 - Provide a clear 'reason' for security flags.
+
+OUTREACH RULES:
+- Use 'Executive' tone by default.
+- If it is a candidate submission, always include a pre-screen question.
+- Draft should be strategic, not just "thanks".
 
 USER INTERACTION HISTORY:
 ${history}
@@ -65,7 +84,7 @@ Return VALID JSON ONLY.
 Return format:
 {
   "workflowType": "recruitment | business | support | other",
-  "priority": "Urgent | Important | To Read | Archived",
+  "priority": "Urgent | Client Req | Vendor Submission | Interview | Follow-up | Important | To Read | Archived | Spam | Phishing",
   "security": {
     "status": "Safe | Spam | Phishing",
     "reason": "Detailed justification for the status",
