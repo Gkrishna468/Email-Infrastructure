@@ -112,6 +112,7 @@ export default function App() {
   const [isAddingWebhook, setIsAddingWebhook] = useState(false);
   const [isGmailConnected, setIsGmailConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // 1. Auth Listener
   useEffect(() => {
@@ -199,15 +200,19 @@ export default function App() {
   }, []);
 
   const handleFetchGmail = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
     try {
       const res = await fetch(`${API_URL}/api/gmail/fetch?limit=100`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
-        if (data.count > 0) {
-          // Success handled by real-time listener
-        }
+        console.log(`Synced ${data.count} emails`);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Fetch error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {
@@ -421,12 +426,17 @@ export default function App() {
           <div className="p-4 bg-slate-900 rounded-xl text-white shadow-lg overflow-hidden relative border border-slate-800">
             <div className="absolute top-0 right-0 p-3">
               <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                {isSyncing && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>}
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isSyncing ? 'bg-indigo-500' : 'bg-emerald-500'}`}></span>
               </span>
             </div>
-            <p className="text-xs opacity-70 mb-1">Ingestion Mode</p>
-            <p className="text-sm font-bold truncate text-indigo-50">Active Stream</p>
+            <p className="text-[10px] opacity-70 font-bold uppercase tracking-widest mb-1">{isSyncing ? 'Syncing...' : 'Ingestion Mode'}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold truncate text-indigo-50">
+                {isSyncing ? 'Ingesting Streams' : 'Active Ingestion'}
+              </p>
+              {isSyncing && <Activity className="w-3 h-3 text-indigo-400 animate-spin" />}
+            </div>
           </div>
         </div>
       </aside>
@@ -438,13 +448,35 @@ export default function App() {
           {/* Header */}
           <header className="h-14 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <Command className="w-5 h-5 text-indigo-600" />
+              <div className="p-1.5 bg-indigo-50 rounded-lg">
+                <Command className="w-4 h-4 text-indigo-600" />
+              </div>
               <h1 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Staffing Command Center</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[10px] font-mono text-slate-500 gap-1.5 shadow-sm">
-                <Zap className="w-3 h-3 text-amber-500" /> Real-time Sync Active
-              </div>
+            <div className="flex items-center gap-3">
+              {isSyncing ? (
+                <div className="flex items-center px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-bold text-indigo-600 gap-2 shadow-sm animate-pulse">
+                  <Activity className="w-3 h-3 text-indigo-500 animate-spin" /> Ingesting Streams...
+                </div>
+              ) : (
+                <div className="flex items-center px-3 py-1 bg-slate-50 border border-slate-200 rounded-full text-[10px] font-mono text-slate-500 gap-2 shadow-sm">
+                  <Zap className="w-3 h-3 text-amber-500" /> System Live
+                </div>
+              )}
+              
+              <div className="h-6 w-px bg-slate-200 mx-1"></div>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-[10px] font-bold uppercase tracking-wider bg-white shadow-sm border-slate-200 hover:bg-slate-50 gap-2"
+                onClick={handleFetchGmail}
+                disabled={isSyncing || !isGmailConnected}
+              >
+                {isSyncing ? <Activity className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                Sync Gmail
+              </Button>
+
               <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg" onClick={handleSimulateEmail}>
                 <Plus className="w-4 h-4" />
               </Button>
@@ -500,9 +532,35 @@ export default function App() {
               <TabsContent value="inbox" className="flex-1 min-h-0 mt-0">
                 <div className="h-full border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50/10">
                   {filteredEmails.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-40">
-                      <Mail className="w-12 h-12 mb-4" />
-                      <p className="text-sm font-bold">{searchQuery ? 'No matching signals found' : 'Awaiting Stream...'}</p>
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                      <div className="relative mb-6">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isSyncing ? 'bg-indigo-600 text-white animate-pulse shadow-indigo-200 shadow-xl' : 'bg-slate-100 text-slate-300'}`}>
+                          {isSyncing ? <Activity className="w-8 h-8 animate-spin" /> : <Mail className="w-10 h-10" />}
+                        </div>
+                        {isSyncing && (
+                          <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1 rounded-full border-2 border-white">
+                            <Zap className="w-3 h-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-black text-slate-800 mb-1">
+                        {isSyncing ? 'Synchronizing Recruiter Intelligence' : searchQuery ? 'No matching signals' : 'Command Center Offline'}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-medium max-w-[200px] leading-relaxed">
+                        {isSyncing 
+                          ? 'Fetching latest streams from Gmail, analyzing candidate intent and match scores...' 
+                          : searchQuery 
+                            ? 'Adjust your filters to see more recruitment signals.' 
+                            : 'Connect your Gmail or click Sync to begin ingesting recruitment signals.'}
+                      </p>
+                      {!isSyncing && !searchQuery && (
+                        <Button 
+                          onClick={handleFetchGmail} 
+                          className="mt-6 h-9 bg-indigo-600 text-white px-6 rounded-xl text-[10px] items-center gap-2"
+                        >
+                          <Zap className="w-3.5 h-3.5" /> Start Initial Ingestion
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="flex-1 overflow-auto scrollbar-hide">
@@ -795,38 +853,46 @@ export default function App() {
                          </div>
                       </div>
                       
-                      <div className="bg-indigo-900 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                          <Zap className="w-20 h-20" />
-                        </div>
-                        <div className="relative z-10 space-y-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">System Ready for Dispatch</span>
+                      <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                        <div className="bg-slate-900 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group flex-1 flex flex-col">
+                          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <Zap className="w-20 h-20" />
                           </div>
-                          <p className="text-sm leading-relaxed font-medium text-indigo-50 leading-relaxed italic">
-                            "{selectedEmail.outreach_draft || 'Generating advanced outreach strategy based on candidate intent and match score...'}"
-                          </p>
+                          
+                          <div className="relative z-10 flex-1 flex flex-col">
+                             <div className="flex items-center gap-2 mb-4">
+                               <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                                 <Fingerprint className="w-3 h-3 text-indigo-300" />
+                               </div>
+                               <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Generated Reply Draft</span>
+                             </div>
+                             
+                             <textarea 
+                               className="bg-transparent text-sm leading-relaxed font-medium flex-1 outline-none resize-none scrollbar-hide text-indigo-50 min-h-[150px]"
+                               defaultValue={selectedEmail.outreach_draft || `Dear Team,\n\nI have reviewed the submission for ${selectedEmail.metadata?.candidateName || 'the candidate'} for the ${selectedEmail.metadata?.role || 'role'}. The match score is ${selectedEmail.match_score?.score || 0}%.\n\nCould you clarify the notice period availability?`}
+                             />
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between relative z-10">
+                            <p className="text-[10px] text-white/40 italic">Drafted via Gemini 3 Flash</p>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="h-8 text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white gap-2 px-4 shadow-lg shadow-indigo-500/20">
+                                <Send className="w-3 h-3" /> Execute Send
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-4">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestion: Pre-Screening</h4>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-between group cursor-pointer hover:border-indigo-200 transition-all">
-                             How soon can you relocate to the onsite location?
-                             <CornerDownRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
-                          </div>
-                          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-between group cursor-pointer hover:border-indigo-200 transition-all">
-                             Confirm your availability for a technical screening?
-                             <CornerDownRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
-                          </div>
+                        <div className="grid grid-cols-2 gap-3 shrink-0">
+                          <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 text-indigo-500" /> WhatsApp Agent
+                          </Button>
+                          <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
+                            <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add to ATS
+                          </Button>
                         </div>
                       </div>
-
-                      <Button className="w-full h-12 bg-indigo-600 hover:bg-black transition-all text-white font-black uppercase tracking-widest shadow-lg rounded-2xl flex items-center justify-center gap-3">
-                        <Send className="w-5 h-5" /> Dispatch Outreach
-                      </Button>
                     </div>
                   </TabsContent>
 

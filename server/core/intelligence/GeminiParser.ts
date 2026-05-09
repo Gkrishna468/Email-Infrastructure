@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
+import { getFirestoreAdmin } from '../../firebaseAdmin.js';
 import { OmniMailPayload } from "../types/Email.js";
 import { OmniMailIntelligence } from "../types/Intelligence.js";
-import db from '../../db.js';
 
 // Lazy initialize the AI client
 let ai: GoogleGenAI | null = null;
@@ -15,13 +15,13 @@ function getAIClient() {
 export class GeminiParser {
   static async getInteractionHistory() {
     try {
-      const history = db.prepare(`
-        SELECT action, user_feedback, emails.subject, emails.sender
-        FROM interaction_history
-        JOIN emails ON interaction_history.email_id = emails.id
-        ORDER BY interaction_history.created_at DESC
-        LIMIT 10
-      `).all();
+      const db = getFirestoreAdmin();
+      const snapshot = await db.collection('interactions')
+        .orderBy('created_at', 'desc')
+        .limit(10)
+        .get();
+      
+      const history = snapshot.docs.map(doc => doc.data());
       return JSON.stringify(history);
     } catch (e) {
       return "[]";
