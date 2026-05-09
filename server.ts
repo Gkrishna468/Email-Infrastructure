@@ -144,7 +144,8 @@ async function startServer() {
 
   app.get('/auth/google', (req, res) => {
     try {
-      const url = getAuthUrl();
+      const userId = req.query.userId as string;
+      const url = getAuthUrl(userId);
       res.json({ url });
     } catch (err) {
       console.error('Failed to generate auth url:', err);
@@ -155,10 +156,12 @@ async function startServer() {
   app.get('/auth/google/callback', async (req, res) => {
     try {
       const code = req.query.code as string;
+      const userId = req.query.state as string;
+      
       const oauth2Client = getOAuth2Client();
       const { tokens } = await oauth2Client.getToken(code);
       
-      await saveTokens(tokens);
+      await saveTokens(tokens, userId);
 
       res.send(`
         <html>
@@ -181,15 +184,22 @@ async function startServer() {
     }
   });
 
-  app.get('/api/gmail/status', (req, res) => {
-    const tokens = getTokens();
-    res.json({ connected: !!tokens });
+  app.get('/api/gmail/status', async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      const tokens = await getTokens(userId);
+      res.json({ connected: !!tokens });
+    } catch (err) {
+      console.error('Failed to check Gmail status:', err);
+      res.status(500).json({ error: 'Failed to check Gmail status' });
+    }
   });
 
   app.post('/api/gmail/fetch', async (req, res) => {
     try {
       const limit = Number(req.query.limit) || 50;
-      const emails = await GoogleWorkspaceConnector.fetchLatestEmails(limit);
+      const userId = req.query.userId as string;
+      const emails = await GoogleWorkspaceConnector.fetchLatestEmails(limit, userId);
       
       const firestore = getFirestoreAdmin();
       

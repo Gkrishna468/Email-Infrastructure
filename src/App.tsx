@@ -152,8 +152,9 @@ export default function App() {
   }, []);
 
   const checkGmailStatus = async () => {
+    if (!user) return;
     try {
-      const res = await fetch(`${API_URL}/api/gmail/status`);
+      const res = await fetch(`${API_URL}/api/gmail/status?userId=${user.uid}`);
       if (res.ok) {
         const data = await res.json();
         setIsGmailConnected(data.connected);
@@ -175,8 +176,9 @@ export default function App() {
   }, [emails, searchQuery]);
 
   const handleConnectGmail = async () => {
+    if (!user) return;
     try {
-      const res = await fetch(`${API_URL}/auth/google`);
+      const res = await fetch(`${API_URL}/auth/google?userId=${user.uid}`);
       if (res.ok) {
         const { url } = await res.json();
         const authWindow = window.open(url, 'oauth_popup', 'width=600,height=700');
@@ -200,10 +202,10 @@ export default function App() {
   }, []);
 
   const handleFetchGmail = async () => {
-    if (isSyncing) return;
+    if (isSyncing || !user) return;
     setIsSyncing(true);
     try {
-      const res = await fetch(`${API_URL}/api/gmail/fetch?limit=100`, { method: 'POST' });
+      const res = await fetch(`${API_URL}/api/gmail/fetch?limit=100&userId=${user.uid}`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         console.log(`Synced ${data.count} emails`);
@@ -448,7 +450,9 @@ export default function App() {
           {/* Header */}
           <header className="h-14 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <Command className="w-5 h-5 text-indigo-600" />
+              <div className="p-1.5 bg-indigo-50 rounded-lg">
+                <Command className="w-4 h-4 text-indigo-600" />
+              </div>
               <h1 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Staffing Command Center</h1>
             </div>
             <div className="flex items-center gap-3">
@@ -882,18 +886,18 @@ export default function App() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3 shrink-0">
-                        <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
-                          <MessageSquare className="w-3.5 h-3.5 text-indigo-500" /> WhatsApp Agent
-                        </Button>
-                        <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
-                          <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add to ATS
-                        </Button>
+                        <div className="grid grid-cols-2 gap-3 shrink-0">
+                          <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 text-indigo-500" /> WhatsApp Agent
+                          </Button>
+                          <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
+                            <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add to ATS
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="workflow">
+                    <TabsContent value="workflow">
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">OmniMail Signal Journey</h3>
                       <div className="relative border-l-2 border-indigo-100 ml-4 space-y-10">

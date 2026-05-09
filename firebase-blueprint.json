@@ -81,6 +81,21 @@
     "/interactions/{interactionId}": {
       "schema": "Interaction",
       "description": "Collection of user feedback and actions."
+    },
+    "/gmail_tokens/{userId}": {
+      "schema": {
+        "title": "Gmail OAuth Tokens",
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" },
+          "refresh_token": { "type": "string" },
+          "expiry_date": { "type": "number" },
+          "scope": { "type": "string" },
+          "token_type": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        }
+      },
+      "description": "Sensitive OAuth tokens for Gmail access."
     }
   }
 }

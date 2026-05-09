@@ -77,5 +77,10 @@ service cloud.firestore {
       allow read: if isVerified();
       allow create: if isVerified() && isValidId(interactionId) && isValidInteraction(incoming());
     }
+
+    match /gmail_tokens/{userId} {
+      // Sensitive tokens are only accessible via Backend Admin SDK
+      allow read, write: if false;
+    }
   }
 }
