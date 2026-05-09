@@ -1,9 +1,8 @@
 import { google } from "googleapis";
 import { getOAuth2Client, getTokens } from "../../auth/google.js";
-import { EmailNormalizer } from "../normalizers/EmailNormalizer.js";
 
 export class GoogleWorkspaceConnector {
-  static async fetchLatestEmails(limit = 50, userId?: string) {
+  static async fetchLatestEmails(limit = 50, userId: string) {
     const tokens = await getTokens(userId);
     if (!tokens) {
       throw new Error("Gmail not connected. Missing OAuth tokens.");
@@ -12,36 +11,24 @@ export class GoogleWorkspaceConnector {
     const oauth2Client = getOAuth2Client();
     oauth2Client.setCredentials(tokens);
 
-    const gmail = google.gmail({
-      version: "v1",
-      auth: oauth2Client
-    });
+    const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
     const listRes = await gmail.users.messages.list({
       userId: "me",
       maxResults: limit
     });
 
-    const messages = listRes.data.messages;
-    if (!messages || messages.length === 0) {
-      return [];
-    }
-
-    const normalizedEmails = [];
+    const messages = listRes.data.messages || [];
+    const fullEmails = [];
 
     for (const msg of messages) {
-      if (msg.id) {
-        const fullMsg = await gmail.users.messages.get({
-          userId: "me",
-          id: msg.id,
-          format: 'full'
-        });
-        
-        const normalized = EmailNormalizer.normalize(fullMsg.data);
-        normalizedEmails.push(normalized);
-      }
+      const emailRes = await gmail.users.messages.get({
+        userId: "me",
+        id: msg.id!
+      });
+      fullEmails.push(emailRes.data);
     }
 
-    return normalizedEmails;
+    return fullEmails;
   }
 }

@@ -1,192 +1,89 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import crypto from 'crypto';
-import path from 'path';
-import { EmailRepository } from './server/core/storage/EmailRepository.js';
-import { WebhookRepository } from './server/core/storage/WebhookRepository.js';
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import { createServer as createViteServer } from "vite";
+import { getAuthUrl, getOAuth2Client, saveTokens, getTokens } from "./server/auth/google.js";
+import { GoogleWorkspaceConnector } from "./server/core/connectors/GoogleWorkspaceConnector.js";
+import { getFirestoreAdmin } from "./server/firebaseAdmin.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-import { getAuthUrl, getOAuth2Client, saveTokens, getTokens } from './server/auth/google.js';
-import { GoogleWorkspaceConnector } from './server/core/connectors/GoogleWorkspaceConnector.js';
-import { OmniMailEngine } from './server/core/engine/OmniMailEngine.js';
-import { getFirestoreAdmin } from './server/firebaseAdmin.js';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 8080;
+  const PORT = 3000;
 
-  app.use(cors({
-    origin: [
-      "https://app.hirenestworkforce.com",
-      "http://localhost:5173",
-      process.env.APP_URL || ""
-    ].filter(Boolean),
-    credentials: true
-  }));
   app.use(express.json());
 
-  // Wait for the DB to be initialized conceptually, though better-sqlite3 is sync
-  
-  // Root path for basic health/operational check
-  app.get('/', (_, res) => {
-    res.json({
-      status: "HireNestOS OmniMail API Operational",
-      version: "1.0.0",
-      timestamp: new Date().toISOString()
-    });
-  });
-
   // API Routes
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', time: new Date() });
-  });
-
-  // Fetch emails
-  app.get('/api/emails', async (req, res) => {
-    try {
-      const emails = await EmailRepository.getAll();
-      res.json(emails);
-    } catch (err) {
-      console.error("DB error", err);
-      res.status(500).json({ error: "Failed to fetch emails" });
-    }
-  });
-
-  // Feedback and Interaction History
-  app.post('/api/emails/:id/interaction', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { action, feedback, priority, security_status } = req.body;
-
-      // 1. Log to history (Interactions)
-      const coll = getFirestoreAdmin().collection('interactions');
-      await coll.add({
-        email_id: id,
-        action,
-        user_feedback: feedback || null,
-        created_at: new Date().toISOString()
-      });
-
-      // 2. Update email if requested
-      const emailRef = getFirestoreAdmin().collection('emails').doc(id);
-      const updates: any = {};
-      
-      if (priority) updates.priority = priority;
-      if (security_status) {
-        updates.security = {
-          status: security_status,
-          reason: feedback || 'User override'
-        };
-      }
-      
-      if (Object.keys(updates).length > 0) {
-        await emailRef.update(updates);
-      }
-
-      res.json({ success: true });
-    } catch (err) {
-      console.error('Feedback error:', err);
-      res.status(500).json({ error: 'Failed to record interaction' });
-    }
-  });
-
-  // The actual ingestion webhook payload (e.g. from Sendgrid / Mailgun or custom)
-  app.post('/api/webhooks/ingress', async (req, res) => {
-    try {
-      const { subject, sender, body } = req.body;
-      
-      if (!sender || !body) {
-        return res.status(400).json({ error: "Missing 'sender' or 'body'" });
-      }
-
-      const id = crypto.randomUUID();
-      
-      // Early ACK to the webhook provider
-      res.status(202).json({ status: "accepted", id });
-
-      // Process asynchronously
-      setImmediate(async () => {
-        try {
-          const { GmailConnector } = await import('./server/core/connectors/GmailConnector.js');
-          await GmailConnector.ingestWebhook({
-            id,
-            subject,
-            sender,
-            body
-          });
-          
-          // The actual processing and webhook firing is handled down the line
-          // in OmniMailEngine -> WorkflowEngine.
-        } catch (dbErr) {
-          console.error("Failed to process email", dbErr);
-        }
-      });
-      
-    } catch (err) {
-      console.error('Ingress error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  });
-
-  // CRM Webhook Receiver Simulation (Priority 3)
-  app.post('/api/webhooks/omnimail', (req, res) => {
-    try {
-      console.log('----------------------------------------------------');
-      console.log('🚀 [CRM RECEIVER] Received OmniMail payload:');
-      console.log(JSON.stringify(req.body, null, 2));
-      console.log('----------------------------------------------------');
-      res.status(200).json({ status: "success", receivedAt: new Date().toISOString() });
-    } catch (err) {
-      console.error('CRM Webhook error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
   });
 
   app.get('/auth/google', (req, res) => {
     try {
       const userId = req.query.userId as string;
+      console.log("✅ Starting OAuth for:", userId);
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
       const url = getAuthUrl(userId);
       res.json({ url });
     } catch (err) {
-      console.error('Failed to generate auth url:', err);
-      res.status(500).json({ error: 'Failed to generate auth url' });
+      console.error('❌ Failed to generate auth url:', err);
+      res.status(500).json({ error: 'Auth initialization failed' });
     }
   });
 
   app.get('/auth/google/callback', async (req, res) => {
     try {
+      console.log("✅ OAuth callback hit");
       const code = req.query.code as string;
       const userId = req.query.state as string;
       
+      console.log("✅ User ID from state:", userId);
+      console.log("✅ Auth code present:", !!code);
+
+      if (!code) throw new Error("Missing OAuth code");
+      if (!userId) throw new Error("Missing userId in state");
+
       const oauth2Client = getOAuth2Client();
       const { tokens } = await oauth2Client.getToken(code);
       
+      console.log("✅ Tokens received result:", {
+        access_token: !!tokens.access_token,
+        refresh_token: !!tokens.refresh_token,
+        expiry_date: tokens.expiry_date
+      });
+
       await saveTokens(tokens, userId);
+      console.log("✅ Tokens stored in Firestore for user:", userId);
 
       res.send(`
         <html>
           <body>
             <script>
-              if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                window.close();
-              } else {
-                window.location.href = '/';
-              }
+              window.opener.postMessage({ type: 'GMAIL_CONNECTED' }, '*');
+              window.close();
             </script>
-            <p>Authentication successful. This window should close automatically.</p>
+            <h1>Connected!</h1>
+            <p>You can close this window now.</p>
           </body>
         </html>
       `);
-    } catch (err) {
-      console.error('OAuth callback error:', err);
-      res.status(500).send('Authentication failed');
+    } catch (err: any) {
+      console.error('❌ OAuth callback error:', err);
+      res.status(500).send(`
+        <h1>Authentication failed</h1>
+        <p>Error: ${err instanceof Error ? err.message : String(err)}</p>
+        <pre>${err?.stack || ""}</pre>
+      `);
     }
   });
 
   app.get('/api/gmail/status', async (req, res) => {
     try {
       const userId = req.query.userId as string;
+      if (!userId) return res.json({ connected: false });
       const tokens = await getTokens(userId);
       res.json({ connected: !!tokens });
     } catch (err) {
@@ -197,76 +94,67 @@ async function startServer() {
 
   app.post('/api/gmail/fetch', async (req, res) => {
     try {
-      const limit = Number(req.query.limit) || 50;
+      const limit = Number(req.query.limit) || 20;
       const userId = req.query.userId as string;
+      
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
+
       const emails = await GoogleWorkspaceConnector.fetchLatestEmails(limit, userId);
-      
-      const firestore = getFirestoreAdmin();
-      
-      // Process emails via OmniMail Engine
+      const db = getFirestoreAdmin();
+      const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      let count = 0;
       for (const email of emails) {
-        // Quick check if email already exists
-        const docRef = firestore.collection('emails').doc(email.messageId);
-        const doc = await docRef.get();
+        const snippet = email.snippet || "";
+        const subject = email.payload?.headers?.find(h => h.name === 'Subject')?.value || "No Subject";
+        const from = email.payload?.headers?.find(h => h.name === 'From')?.value || "Unknown";
+        const body = snippet; // Simplification for now
+
+        // AI Parsing
+        const prompt = `Analyze this email for recruitment. Candidate Name, Role, Match Score (0-100), Reasons. Return JSON. Email: ${subject} - ${body}`;
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
         
-        if (!doc.exists) {
-          await OmniMailEngine.process(email);
-        }
+        // Very basic JSON extraction from AI response
+        let aiData = { candidateName: "Unknown", role: "Unknown", score: 0, reasons: [] };
+        try {
+          const jsonMatch = text.match(/\{.*\}/s);
+          if (jsonMatch) aiData = JSON.parse(jsonMatch[0]);
+        } catch (e) {}
+
+        await db.collection("emails").add({
+          id: email.id,
+          subject,
+          snippet,
+          from,
+          date: new Date().toISOString(),
+          userId,
+          match_score: {
+            score: aiData.score || 50,
+            reasons: aiData.reasons || []
+          },
+          metadata: {
+            candidateName: aiData.candidateName || "Extracted Name",
+            role: aiData.role || "Extracted Role"
+          },
+          updatedAt: new Date().toISOString()
+        });
+        count++;
       }
-      
-      res.json({ success: true, count: emails.length });
-    } catch (err: any) {
-      console.error('Failed to fetch emails:', err);
-      res.status(500).json({ error: err.message || 'Failed to fetch emails' });
-    }
-  });
 
-  // Manage Webhooks
-  app.get('/api/webhooks', async (req, res) => {
-    try {
-      const webhooks = await WebhookRepository.getAll();
-      res.json(webhooks);
+      res.json({ success: true, count });
     } catch (err) {
-      res.status(500).json({ error: "error fetching webhooks" });
+      console.error('Fetch failed:', err);
+      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
   });
-
-  app.post('/api/webhooks', async (req, res) => {
-    try {
-      const { name, url } = req.body;
-      if (!name || !url) return res.status(400).json({ error: "Missing name or url" });
-      const webhook = await WebhookRepository.create(name, url);
-      res.json(webhook);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to create webhook" });
-    }
-  });
-
-  app.delete('/api/webhooks/:id', async (req, res) => {
-    try {
-      await WebhookRepository.delete(req.params.id);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: "Failed to delete webhook" });
-    }
-  });
-
-  app.put('/api/webhooks/:id/toggle', async (req, res) => {
-    try {
-      await WebhookRepository.toggle(req.params.id);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: "Failed to toggle webhook" });
-    }
-  });
-
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
-    const { createServer: createViteServer } = await import('vite');
+  if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'spa',
+      appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
@@ -277,8 +165,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 HireNestOS running on port ${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 

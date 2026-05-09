@@ -1,6 +1,9 @@
 {
-  "name": "HireNestOS V2 — AI Staffing Command Center",
-  "description": "Mission control for staffing operations with AI-powered candidate matching, vendor intelligence, and executive snapshots.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "name": "OmniMail Staffing Command Center",
+  "description": "Real-time staffing intelligence platform with Gmail ingestion, AI candidate parsing, and automated outreach.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
 }

@@ -1,101 +1,56 @@
 {
   "entities": {
     "Email": {
-      "title": "Email Signal",
-      "description": "A parsed and analyzed email signal.",
+      "title": "Email",
+      "description": "Recruitment related email",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "subject": { "type": "string" },
-        "sender": { "type": "string" },
-        "body": { "type": "string" },
-        "bodyHtml": { "type": "string" },
-        "summary": { "type": "string" },
-        "action_items": { "type": "array", "items": { "type": "string" } },
-        "intent": { "type": "string" },
-        "priority": { "type": "string", "enum": ["Urgent", "Client Req", "Vendor Submission", "Interview", "Follow-up", "Important", "To Read", "Archived", "Spam", "Phishing"] },
-        "security": {
-          "type": "object",
-          "properties": {
-            "status": { "type": "string", "enum": ["Safe", "Spam", "Phishing"] },
-            "reason": { "type": "string" }
-          }
-        },
+        "snippet": { "type": "string" },
+        "from": { "type": "string" },
+        "date": { "type": "string" },
         "match_score": {
           "type": "object",
           "properties": {
             "score": { "type": "number" },
-            "reasoning": { "type": "string" },
-            "gaps": { "type": "array", "items": { "type": "string" } }
+            "reasons": { "type": "array" }
           }
         },
-        "vendor_intelligence": {
+        "metadata": {
           "type": "object",
           "properties": {
-            "isKnownVendor": { "type": "boolean" },
-            "submissionQuality": { "type": "string" },
-            "spamLikelihood": { "type": "number" }
+            "candidateName": { "type": "string" },
+            "role": { "type": "string" },
+            "experience": { "type": "string" }
           }
         },
-        "metadata": { "type": "object" },
         "outreach_draft": { "type": "string" },
-        "received_at": { "type": "string", "format": "date-time" },
-        "status": { "type": "string" }
-      },
-      "required": ["id", "subject", "sender", "received_at"]
+        "userId": { "type": "string" }
+      }
     },
-    "Webhook": {
-      "title": "OS Connector",
-      "description": "An external webhook connector for forwarding data.",
+    "GmailToken": {
+      "title": "Gmail OAuth Token",
+      "description": "Sensitive OAuth tokens for Gmail access",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "url": { "type": "string" },
-        "active": { "type": "boolean" },
-        "created_at": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "name", "url", "active"]
-    },
-    "Interaction": {
-      "title": "User Interaction",
-      "description": "History of user actions on email signals.",
-      "type": "object",
-      "properties": {
-        "email_id": { "type": "string" },
-        "action": { "type": "string" },
-        "user_feedback": { "type": "string" },
-        "created_at": { "type": "string", "format": "date-time" }
+        "access_token": { "type": "string" },
+        "refresh_token": { "type": "string" },
+        "expiry_date": { "type": "number" },
+        "scope": { "type": "string" },
+        "token_type": { "type": "string" },
+        "updatedAt": { "type": "string" }
       }
     }
   },
   "firestore": {
     "/emails/{emailId}": {
       "schema": "Email",
-      "description": "Collection of processed email signals."
-    },
-    "/webhooks/{webhookId}": {
-      "schema": "Webhook",
-      "description": "Collection of configured OS connectors."
-    },
-    "/interactions/{interactionId}": {
-      "schema": "Interaction",
-      "description": "Collection of user feedback and actions."
+      "description": "Collection of processed recruitment emails"
     },
     "/gmail_tokens/{userId}": {
-      "schema": {
-        "title": "Gmail OAuth Tokens",
-        "type": "object",
-        "properties": {
-          "access_token": { "type": "string" },
-          "refresh_token": { "type": "string" },
-          "expiry_date": { "type": "number" },
-          "scope": { "type": "string" },
-          "token_type": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        }
-      },
-      "description": "Sensitive OAuth tokens for Gmail access."
+      "schema": "GmailToken",
+      "description": "Sensitive user Gmail OAuth tokens"
     }
   }
 }
