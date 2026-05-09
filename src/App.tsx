@@ -448,9 +448,7 @@ export default function App() {
           {/* Header */}
           <header className="h-14 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 bg-indigo-50 rounded-lg">
-                <Command className="w-4 h-4 text-indigo-600" />
-              </div>
+              <Command className="w-5 h-5 text-indigo-600" />
               <h1 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Staffing Command Center</h1>
             </div>
             <div className="flex items-center gap-3">
@@ -884,14 +882,13 @@ export default function App() {
                         </div>
                       </div>
                       
-                        <div className="grid grid-cols-2 gap-3 shrink-0">
-                          <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
-                            <MessageSquare className="w-3.5 h-3.5 text-indigo-500" /> WhatsApp Agent
-                          </Button>
-                          <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
-                            <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add to ATS
-                          </Button>
-                        </div>
+                      <div className="grid grid-cols-2 gap-3 shrink-0">
+                        <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
+                          <MessageSquare className="w-3.5 h-3.5 text-indigo-500" /> WhatsApp Agent
+                        </Button>
+                        <Button variant="outline" className="h-10 text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white shadow-sm flex items-center gap-2">
+                          <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add to ATS
+                        </Button>
                       </div>
                     </div>
                   </TabsContent>
