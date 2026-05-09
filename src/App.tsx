@@ -125,25 +125,10 @@ export default function App() {
   };
 
   // 4. Connect Gmail
-  const handleConnectGmail = async () => {
+  const handleConnectGmail = () => {
     if (!user) return;
-    try {
-      const res = await fetch(`${API_URL}/auth/google?userId=${user.uid}`);
-      if (res.ok) {
-        const { url } = await res.json();
-        const authWindow = window.open(url, 'oauth_popup', 'width=600,height=700');
-        
-        const messageHandler = (event: MessageEvent) => {
-          if (event.data.type === 'GMAIL_CONNECTED') {
-            setIsGmailConnected(true);
-            window.removeEventListener('message', messageHandler);
-          }
-        };
-        window.addEventListener('message', messageHandler);
-      }
-    } catch (e) {
-      console.error("Auth error:", e);
-    }
+    // Direct redirect as requested for maximum stability
+    window.location.href = `${API_URL}/auth/google?userId=${user.uid}`;
   };
 
   // 5. Ingest Emails

@@ -24,10 +24,11 @@ async function startServer() {
   app.get('/auth/google', (req, res) => {
     try {
       const userId = req.query.userId as string;
-      console.log("✅ Starting OAuth for:", userId);
       if (!userId) return res.status(400).json({ error: "Missing userId" });
+      
+      console.log("✅ Starting OAuth for:", userId);
       const url = getAuthUrl(userId);
-      res.json({ url });
+      res.redirect(url);
     } catch (err) {
       console.error('❌ Failed to generate auth url:', err);
       res.status(500).json({ error: 'Auth initialization failed' });
@@ -35,64 +36,25 @@ async function startServer() {
   });
 
   app.get('/auth/google/callback', async (req, res) => {
+    const appUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
     try {
       console.log("✅ OAuth callback hit");
       const code = req.query.code as string;
       const userId = req.query.state as string;
       
-      console.log("✅ User ID from state:", userId);
-      console.log("✅ Auth code present:", !!code);
-
-      if (!code) throw new Error("Missing OAuth code");
       if (!userId) throw new Error("Missing userId in state");
+      if (!code) throw new Error("Missing OAuth code");
 
       const oauth2Client = getOAuth2Client();
       const { tokens } = await oauth2Client.getToken(code);
       
-      console.log("✅ Tokens received result:", {
-        access_token: !!tokens.access_token,
-        refresh_token: !!tokens.refresh_token,
-        expiry_date: tokens.expiry_date
-      });
-
       await saveTokens(tokens, userId);
       console.log("✅ Tokens stored in Firestore for user:", userId);
 
-      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
-      
-      res.send(`
-        <html>
-          <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
-            <div style="text-align: center; padding: 2rem; background: white; border-radius: 1rem; shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-              <h1 style="color: #4f46e5; margin-bottom: 0.5rem;">Connected!</h1>
-              <p style="color: #64748b;">Closing this window and returning to OmniMail...</p>
-              <script>
-                if (window.opener) {
-                  window.opener.postMessage({ type: 'GMAIL_CONNECTED' }, '*');
-                  setTimeout(() => window.close(), 1000);
-                } else {
-                  window.location.href = "${appUrl}?gmail=connected";
-                }
-              </script>
-            </div>
-          </body>
-        </html>
-      `);
+      res.redirect(`${appUrl}?gmail=connected`);
     } catch (err: any) {
       console.error('❌ OAuth callback error:', err);
-      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
-      res.status(500).send(`
-        <html>
-          <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #fef2f2;">
-             <div style="text-align: center; padding: 2rem; background: white; border-radius: 1rem; shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 500px;">
-              <h1 style="color: #ef4444; margin-bottom: 0.5rem;">Authentication Failed</h1>
-              <p style="color: #64748b;">${err instanceof Error ? err.message : String(err)}</p>
-              <a href="${appUrl}?gmail=failed" style="display: inline-block; margin-top: 1rem; color: #4f46e5; text-decoration: none; font-weight: bold;">Return to App</a>
-              <pre style="text-align: left; background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; overflow: auto; font-size: 10px;">${err?.stack || ""}</pre>
-            </div>
-          </body>
-        </html>
-      `);
+      res.redirect(`${appUrl}?gmail=failed`);
     }
   });
 
