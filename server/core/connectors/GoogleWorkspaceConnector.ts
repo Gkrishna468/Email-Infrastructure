@@ -3,7 +3,7 @@ import { getOAuth2Client, getTokens } from "../../auth/google.js";
 import { EmailNormalizer } from "../normalizers/EmailNormalizer.js";
 
 export class GoogleWorkspaceConnector {
-  static async fetchLatestEmails(maxResults = 20) {
+  static async fetchLatestEmails(maxResults = 50) {
     const tokens = getTokens();
     if (!tokens) {
       throw new Error("Gmail not connected. Missing OAuth tokens.");

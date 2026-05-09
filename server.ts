@@ -186,7 +186,7 @@ async function startServer() {
 
   app.post('/api/gmail/fetch', async (req, res) => {
     try {
-      const emails = await GoogleWorkspaceConnector.fetchLatestEmails(20);
+      const emails = await GoogleWorkspaceConnector.fetchLatestEmails(50);
       
       // Process emails via OmniMail Engine
       for (const email of emails) {

@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  Mail, Webhook, Settings, Activity, Plus, Search, Trash2, ShieldCheck, MailOpen, CheckCircle2, Clock, Navigation,
-  TrendingUp, Users, Zap, MessageSquare, ArrowRight, CornerUpLeft, Filter, RefreshCcw, MoreVertical,
-  ThumbsUp, ThumbsDown, Info, AlertTriangle, UserPlus, FileSearch, Building2, BrainCircuit, Sparkles,
-  ChevronRight, ExternalLink, Command, ZapOff, Fingerprint, Layers
+  Mail, Webhook, Settings, Activity, Plus, Search, Trash2, ShieldCheck, MailOpen, CheckCircle2, Clock, Navigation
 } from 'lucide-react';
 import { API_URL } from './config/api';
 import { Button } from '../components/ui/button';
@@ -11,24 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { Separator } from '../components/ui/separator';
-import { Progress } from '../components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
 import { formatDistanceToNow } from 'date-fns';
-import { motion, AnimatePresence } from 'motion/react';
 
 type Email = {
   id: string;
@@ -85,9 +69,6 @@ export default function App() {
   const [newWebhookUrl, setNewWebhookUrl] = useState('');
   const [isAddingWebhook, setIsAddingWebhook] = useState(false);
   const [isGmailConnected, setIsGmailConnected] = useState(false);
-  const [outreachTone, setOutreachTone] = useState<string>('Founder');
-  const [isDraftEditable, setIsDraftEditable] = useState(false);
-  const [activeTab, setActiveTab] = useState('inbox');
 
   const fetchEmails = async () => {
     try {
@@ -244,570 +225,732 @@ export default function App() {
   };
 
   return (
-    <TooltipProvider>
-      <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-sans text-slate-900">
-        {/* Sidebar Navigation */}
-        <aside className="w-18 lg:w-64 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col z-30 transition-all duration-300">
-          <div className="p-4 lg:p-6 flex items-center gap-3 border-b border-slate-100">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-indigo-200 shadow-lg">
-              <BrainCircuit className="w-6 h-6 text-white" />
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-sans text-slate-900">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col z-20">
+        <div className="p-6 flex items-center gap-3 border-b border-slate-100">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+            <Activity className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-bold text-lg tracking-tight">HireNestOS</span>
+        </div>
+        <nav className="flex-1 px-4 py-4 space-y-1">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2 mt-2">Navigation</div>
+          <div className="flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50">
+            <MailOpen className="w-5 h-5 mr-3 text-indigo-500" />
+            Inbox & Parsed
+          </div>
+          <div className="flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 cursor-pointer">
+            <Webhook className="w-5 h-5 mr-3 text-slate-400" />
+            Connectors
+          </div>
+          
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-8 mb-2 px-2">Connected Accounts</div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between px-3 py-2 text-sm text-slate-600">
+              <div className="flex items-center">
+                {isGmailConnected ? (
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3"></div>
+                ) : (
+                  <div className="w-2 h-2 rounded-full bg-slate-300 mr-3"></div>
+                )}
+                Gmail Intg.
+              </div>
+              {!isGmailConnected ? (
+                <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={handleConnectGmail}>
+                  Connect
+                </Button>
+              ) : (
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-[10px] border-emerald-200 uppercase">
+                  Connected
+                </Badge>
+              )}
             </div>
-            <div className="hidden lg:block overflow-hidden">
-              <span className="font-bold text-lg tracking-tight block">HireNestOS</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Gen-AI Staffing</span>
+            <div className="flex items-center justify-between px-3 py-2 text-sm text-slate-400">
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-slate-200 mr-3"></div>
+                Outlook
+              </div>
+              <span className="text-[10px]">Soon</span>
             </div>
           </div>
           
-          <ScrollArea className="flex-1 px-3 py-4">
-            <div className="space-y-6">
-              <div>
-                <p className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-3">CORE OPS</p>
-                <div className="space-y-1">
-                  <button 
-                    onClick={() => setActiveTab('inbox')}
-                    className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl border border-transparent transition-all group ${
-                      activeTab === 'inbox' ? 'bg-indigo-50 text-indigo-700 border-indigo-100/50' : 'text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    <MailOpen className={`w-5 h-5 mr-0 lg:mr-3 transition-transform group-hover:scale-110 ${activeTab === 'inbox' ? 'text-indigo-500' : 'text-slate-400'}`} />
-                    <span className="hidden lg:block">Intelligence Inbox</span>
-                  </button>
-                  <button className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-slate-50 border border-transparent transition-all group">
-                    <Users className="w-5 h-5 mr-0 lg:mr-3 text-slate-400 group-hover:text-indigo-400" />
-                    <span className="hidden lg:block">Candidate Graph</span>
-                  </button>
-                  <button className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-slate-50 border border-transparent transition-all group">
-                    <TrendingUp className="w-5 h-5 mr-0 lg:mr-3 text-slate-400 group-hover:text-indigo-400" />
-                    <span className="hidden lg:block">Market Insights</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <p className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-3">INTEGRATIONS</p>
-                <div className="space-y-1">
-                  <button 
-                    onClick={() => setActiveTab('webhooks')}
-                    className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-xl border border-transparent transition-all group ${
-                      activeTab === 'webhooks' ? 'bg-indigo-50 text-indigo-700 border-indigo-100/50' : 'text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Webhook className={`w-5 h-5 mr-0 lg:mr-3 transition-transform group-hover:scale-110 ${activeTab === 'webhooks' ? 'text-indigo-500' : 'text-slate-400'}`} />
-                    <span className="hidden lg:block">Connectors</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <p className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-3">AGENT NETWORK</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-3 py-1 text-[11px] text-slate-500">
-                    <div className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-2 ${isGmailConnected ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                      <span className="hidden lg:block font-bold">Inbox Agent</span>
-                    </div>
-                    {isGmailConnected && <Badge className="hidden lg:flex bg-emerald-50 text-emerald-700 text-[8px] h-4 border-emerald-100 uppercase">ACTIVE</Badge>}
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-1 text-[11px] text-slate-500">
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
-                      <span className="hidden lg:block font-bold">Outreach Agent</span>
-                    </div>
-                    <Badge className="hidden lg:flex bg-indigo-50 text-indigo-700 text-[8px] h-4 border-indigo-100 uppercase">READY</Badge>
-                  </div>
-                </div>
-              </div>
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-8 mb-2 px-2">System Status</div>
+          <div className="space-y-1">
+            <div className="flex items-center px-3 py-2 text-sm text-slate-500">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3"></div> {emails.length} Records Processed
             </div>
-          </ScrollArea>
-
-          <div className="p-4 border-t border-slate-100">
-            <div className="p-3 bg-slate-950 rounded-2xl text-white shadow-xl overflow-hidden relative border border-slate-800 hidden lg:block">
-              <div className="absolute top-0 right-0 p-2">
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">AI Health</p>
-              <p className="text-xs font-bold text-indigo-100">Engine Operational</p>
+            <div className="flex items-center px-3 py-2 text-sm text-slate-500">
+              <div className="w-2 h-2 rounded-full bg-indigo-500 mr-3"></div> {webhooks.filter(w=>w.active).length} Relays Enabled
             </div>
           </div>
-        </aside>
-
-        {/* Main Content Areas (Split Pane) */}
-        <div className="flex-1 flex overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsContent value="inbox" className="flex-1 overflow-hidden p-0 m-0 border-0 data-[state=active]:flex flex-col">
-              {/* Inbox Pane */}
-              <main className={`flex-1 flex flex-col bg-white transition-all duration-500 ${selectedEmail ? 'hidden md:flex' : 'flex'}`}>
-            <header className="h-16 border-b border-slate-100 px-6 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-              <div className="flex items-center gap-4">
-                <h1 className="text-sm font-black uppercase tracking-widest text-slate-400">Intelligence Inbox</h1>
-                <div className="h-4 w-px bg-slate-200" />
-                <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-0 font-bold px-2 py-0.5">
-                  {emails.length} Records
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" className="rounded-xl border-slate-200 font-bold text-xs" onClick={handleSimulateEmail}>
-                  <RefreshCcw className="w-3 h-3 mr-2 text-indigo-500" />
-                  Simulate Triage
-                </Button>
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-                  <Settings className="w-4 h-4 text-slate-400" />
-                </div>
-              </div>
-            </header>
-
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-slate-50 flex items-center gap-2 bg-slate-50/30">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input 
-                    placeholder="Search candidates, roles, or intent..." 
-                    className="pl-10 h-10 bg-white border-slate-200 rounded-xl text-sm shadow-sm focus-visible:ring-indigo-500 ring-offset-0" 
-                  />
-                </div>
-                <Button variant="outline" size="icon" className="rounded-xl border-slate-200 shrink-0">
-                  <Filter className="w-4 h-4 text-slate-500" />
-                </Button>
-              </div>
-
-              <ScrollArea className="flex-1">
-                <div className="divide-y divide-slate-50">
-                  {emails.length === 0 ? (
-                    <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-                      <Sparkles className="w-12 h-12 mb-4 text-slate-200" />
-                      <p className="font-bold text-sm">Waiting for AI ingestion...</p>
-                    </div>
-                  ) : (
-                    emails.map((email) => (
-                      <div 
-                        key={email.id}
-                        onClick={() => setSelectedEmail(email)}
-                        className={`p-4 cursor-pointer transition-all border-l-4 hover:bg-slate-50 group relative ${
-                          selectedEmail?.id === email.id ? 'bg-indigo-50/30 border-indigo-600' : 'border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-black text-xs text-slate-900 truncate tracking-tight">{email.sender}</span>
-                            <div className="w-1 h-1 rounded-full bg-slate-300" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{email.intent}</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-400 shrink-0">
-                            {formatDistanceToNow(new Date(email.received_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <h3 className="text-sm font-bold text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">{email.subject}</h3>
-                        <p className="text-xs text-slate-500 line-clamp-1 mb-3">{email.summary}</p>
-                        
-                        <div className="flex items-center flex-wrap gap-2">
-                          {email.match_score && (
-                            <Badge className={`${
-                              email.match_score.score > 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                              email.match_score.score > 50 ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                              'bg-rose-50 text-rose-700 border-rose-100'
-                            } text-[10px] font-black h-5 border shadow-none`}>
-                              Match: {email.match_score.score}%
-                            </Badge>
-                          )}
-                          {email.vendor_intelligence?.isKnownVendor && (
-                            <Badge className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-black h-5 border shadow-none">
-                              Verified Vendor
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
+        </nav>
+        <div className="p-4 border-t border-slate-100">
+          <div className="p-4 bg-slate-900 rounded-xl text-white shadow-lg overflow-hidden relative border border-slate-800">
+            <div className="absolute top-0 right-0 p-3">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
             </div>
-          </main>
+            <p className="text-xs opacity-70 mb-1">Ingestion Mode</p>
+            <p className="text-sm font-bold truncate text-indigo-50">Active Stream</p>
+          </div>
+        </div>
+      </aside>
 
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-full bg-slate-50 z-10 overflow-hidden relative">
+        {/* Header */}
+        <header className="h-16 border-b border-slate-200 bg-white px-8 flex items-center justify-between shrink-0">
+          <h1 className="text-lg font-semibold text-slate-800">Ingestion Flow Monitor</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-500 items-center hidden sm:flex">
+                Server Status: <span className="text-emerald-600 font-medium ml-1">Operational</span>
+            </span>
+            <Button className="bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm rounded-lg border-0" size="sm" onClick={handleSimulateEmail}>
+              <Mail className="w-4 h-4 mr-2" />
+              Simulate Event
+            </Button>
+          </div>
+        </header>
+
+        {/* Content Grid */}
+        <div className="flex-1 overflow-auto p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-start content-start">
+        
+        {/* Top Stats */}
+        <div className="col-span-12 md:col-span-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Daily Volume</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold">{emails.length}</span>
+            <span className="text-xs text-emerald-600 font-medium">Processed</span>
+          </div>
+        </div>
+        <div className="col-span-12 md:col-span-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Active Relays</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold">{webhooks.filter(w => w.active).length}</span>
+            <span className="text-xs text-indigo-500 font-medium">Connections</span>
+          </div>
+        </div>
+        <div className="col-span-12 md:col-span-4 bg-indigo-50/50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col justify-center">
+          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-2 w-full truncate">Ingress Target Endpoint</p>
+          <code className="text-[11px] bg-white border border-indigo-200 text-indigo-700 py-1.5 px-3 rounded-lg block truncate w-full font-mono shadow-sm">
+            [APP_URL]/api/webhooks/ingress
+          </code>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="col-span-12 flex flex-col gap-6 mt-4">
+          <Tabs defaultValue="inbox" className="w-full">
+            <div className="flex items-center justify-between mb-4">
+              <TabsList className="grid w-full grid-cols-2 max-w-[400px] bg-slate-200/50 p-1 rounded-xl">
+                <TabsTrigger value="inbox" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm rounded-lg transition-all py-1.5">
+                  <MailOpen className="w-4 h-4" />
+                  Parsed Payload
+                </TabsTrigger>
+                <TabsTrigger value="webhooks" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm rounded-lg transition-all py-1.5">
+                  <Webhook className="w-4 h-4" />
+                  OS Connectors
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="inbox">
+              <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden bg-white">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h3 className="font-semibold text-slate-800 text-sm">Ingestion Logs & Advanced Filters</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {['Urgent', 'Important', 'To Read', 'Archived'].map(cat => (
+                      <Badge 
+                        key={cat} 
+                        variant="secondary" 
+                        className={`cursor-pointer transition-opacity hover:opacity-80 ${getPriorityColor(cat)}`}
+                      >
+                        {cat}
+                      </Badge>
+                    ))}
+                    <div className="flex items-center px-3 py-1.5 bg-white border border-slate-200 rounded-lg w-64 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all ml-2">
+                      <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                      <input 
+                        type="text" 
+                        placeholder="Search payloads..." 
+                        className="bg-transparent border-none text-sm focus:outline-none w-full placeholder:text-slate-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {emails.length === 0 ? (
+                  <div className="py-16 text-center text-slate-500 flex flex-col items-center">
+                    <Mail className="w-12 h-12 text-slate-200 mb-4" />
+                    <p className="font-medium">No emails ingested yet.</p>
+                    <p className="text-sm mt-1 text-slate-400">Waiting for webhook payloads on the ingress endpoint...</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead>Priority & Security</TableHead>
+                        <TableHead>Sender & Subject</TableHead>
+                        <TableHead>Intelligence</TableHead>
+                        <TableHead className="text-right">Time</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emails.map((email) => (
+                        <TableRow 
+                          key={email.id} 
+                          className={`cursor-pointer transition-colors ${email.security?.status === 'Phishing' ? 'bg-rose-50 hover:bg-rose-100' : 'hover:bg-slate-50'}`}
+                          onClick={() => setSelectedEmail(email)}
+                        >
+                          <TableCell>
+                            <div className="flex flex-col gap-1.5">
+                              <Badge variant="outline" className={`w-fit text-[10px] py-0 px-2 h-5 font-bold uppercase tracking-wider ${getPriorityColor(email.priority)}`}>
+                                {email.priority}
+                              </Badge>
+                              <Badge variant="outline" className={`w-fit text-[10px] py-0 px-2 h-5 font-bold uppercase tracking-wider ${getSecurityColor(email.security?.status)}`}>
+                                {email.security?.status}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[200px]">
+                            <p className="font-semibold text-slate-900 truncate flex items-center gap-1.5">
+                              {email.sender}
+                              {email.security?.status === 'Phishing' && <ShieldCheck className="w-3 h-3 text-rose-600" />}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">{email.subject}</p>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-medium text-slate-700 truncate max-w-[250px]">
+                                {email.summary.split('.')[0]}...
+                              </span>
+                              {email.action_items && email.action_items.length > 0 && (
+                                <div className="flex items-center gap-2 text-[10px] text-slate-500 bg-slate-100/50 px-1.5 py-0.5 rounded border border-slate-200 w-fit">
+                                  <Clock className="w-3 h-3" /> {email.action_items.length} tasks
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right text-xs text-slate-500 whitespace-nowrap">
+                            {formatDistanceToNow(new Date(email.received_at), { addSuffix: true })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </Card>
             </TabsContent>
 
-            <TabsContent value="webhooks" className="flex-1 overflow-hidden p-0 m-0 border-0 data-[state=active]:flex flex-col">
-              <ScrollArea className="flex-1">
-                <div className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
+            <TabsContent value="webhooks">
+              <Card className="rounded-2xl border-slate-200 shadow-sm bg-white overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
                   <div>
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">OS Connectors</h2>
-                    <p className="text-xs text-slate-500 font-medium whitespace-pre-wrap">Sync intelligence to your staffing stack.</p>
+                    <CardTitle className="font-semibold text-slate-800 text-sm mb-1">OS Connectors (Webhooks)</CardTitle>
+                    <CardDescription className="text-xs">Forward parsed email data to your agents, databases, or workflow tools.</CardDescription>
                   </div>
-                  <Button size="sm" onClick={() => setIsAddingWebhook(true)} className="bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-100 font-bold border-0">
-                    <Plus className="w-4 h-4 mr-2" /> New Connector
+                  <Button size="sm" onClick={() => setIsAddingWebhook(true)} className="bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg shadow-sm border-0">
+                    <Plus className="w-4 h-4 mr-2" /> Add Connector
                   </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Dialog open={isAddingWebhook} onOpenChange={setIsAddingWebhook}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add OS Connector</DialogTitle>
+                        <DialogDescription>
+                          Whenever a new email is ingested and parsed by Gemini, an HTTP POST request will be sent to this URL with the structured payload.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">Name</Label>
+                          <Input 
+                            id="name" 
+                            placeholder="e.g. Notion DB, Make.com" 
+                            className="col-span-3" 
+                            value={newWebhookName}
+                            onChange={(e) => setNewWebhookName(e.target.value)}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="url" className="text-right">Webhook URL</Label>
+                          <Input 
+                            id="url" 
+                            placeholder="https://..." 
+                            className="col-span-3"
+                            value={newWebhookUrl}
+                            onChange={(e) => setNewWebhookUrl(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" onClick={handleAddWebhook}>Save Connector</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
                   {webhooks.length === 0 ? (
-                    <div className="col-span-full h-48 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-                      <Webhook className="w-10 h-10 text-slate-300 mb-3" />
-                      <p className="font-bold text-slate-400">No active relays configured.</p>
+                    <div className="text-center py-8 text-slate-500 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                      <Webhook className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                      <p>No connectors currently active.</p>
+                      <p className="text-sm">Parsed data is currently only staying in this local SQLite DB.</p>
                     </div>
                   ) : (
-                    webhooks.map((hook) => (
-                      <Card key={hook.id} className="rounded-2xl border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-indigo-100 group">
-                        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                          <div>
-                            <CardTitle className="text-sm font-black text-slate-800">{hook.name}</CardTitle>
-                            <CardDescription className="text-[10px] truncate max-w-[200px] font-mono">{hook.url}</CardDescription>
+                    <div className="space-y-4">
+                      {webhooks.map((hook) => (
+                        <div key={hook.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-lg bg-white hover:border-slate-300 transition-colors">
+                          <div className="mb-4 sm:mb-0">
+                            <h3 className="font-semibold text-slate-900 text-sm">{hook.name}</h3>
+                            <code className="text-xs text-slate-500 mt-1 block truncate max-w-[300px]">{hook.url}</code>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                                <MoreVertical className="w-4 h-4 text-slate-400" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="rounded-xl border-slate-100 shadow-xl overflow-hidden">
-                              <DropdownMenuItem className="text-xs font-bold py-2" onClick={() => handleToggleWebhook(hook.id)}>
-                                {hook.active ? 'Pause Sync' : 'Resume Sync'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-xs font-bold py-2 text-rose-600" onClick={() => handleDeleteWebhook(hook.id)}>
-                                Remove Connector
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </CardHeader>
-                        <CardFooter className="pt-0 flex items-center justify-between">
-                           <Badge className={`${hook.active ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'} text-[9px] font-black h-5 border shadow-none`}>
-                             {hook.active ? 'OPERATIONAL' : 'PAUSED'}
-                           </Badge>
-                           <div className="flex gap-2">
-                             <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
-                               <Layers className="w-3 h-3 text-slate-400" />
-                             </div>
-                           </div>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  )}
-                </div>
-
-                {/* Add Webhook Drawer/Dialog */}
-                <Sheet open={isAddingWebhook} onOpenChange={setIsAddingWebhook}>
-                  <SheetContent className="sm:max-w-md bg-white border-l-0 shadow-2xl rounded-l-[2rem]">
-                    <SheetHeader className="pb-8">
-                      <SheetTitle className="text-2xl font-black text-slate-900 flex items-center gap-2 tracking-tight">
-                        <Webhook className="w-6 h-6 text-indigo-600" /> New Connector
-                      </SheetTitle>
-                      <SheetDescription className="text-xs font-medium text-slate-500">
-                        Create a real-time event bridge for HireNest intelligence.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Internal Alias</Label>
-                        <Input 
-                          placeholder="e.g. Talent CRM Sync" 
-                          className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-indigo-500 text-sm font-bold ring-offset-0"
-                          value={newWebhookName}
-                          onChange={(e) => setNewWebhookName(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Final Destination URL (POST)</Label>
-                        <Input 
-                          placeholder="https://..." 
-                          className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-indigo-500 text-sm font-bold ring-offset-0"
-                          value={newWebhookUrl}
-                          onChange={(e) => setNewWebhookUrl(e.target.value)}
-                        />
-                      </div>
-                      <Button className="w-full h-14 bg-slate-950 text-white hover:bg-slate-900 rounded-2xl shadow-xl font-black text-xs uppercase tracking-widest group border-0" onClick={handleAddWebhook}>
-                        Initialize Relay <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                      </Button>
+                          <div className="flex items-center gap-3">
+                            <Button 
+                              variant={hook.active ? "default" : "secondary"} 
+                              size="sm"
+                              className={hook.active ? "bg-emerald-600 hover:bg-emerald-700 text-xs px-3 shadow-sm border-0" : "bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs shadow-none border-0"}
+                              onClick={() => handleToggleWebhook(hook.id)}
+                            >
+                              {hook.active ? (
+                                <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> Healthy</span>
+                              ) : (
+                                <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-slate-400 rounded-full" /> Paused</span>
+                              )}
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteWebhook(hook.id)}>
+                              <Trash2 className="w-4 h-4 text-slate-400 hover:text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-              </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
+        </div>
+        </div>
+      </main>
 
-          {/* Intelligence Detail Panel (Split Pane replacement for Dialog) */}
-          <AnimatePresence mode="wait">
-            {selectedEmail ? (
-              <motion.aside
-                key="detail"
-                initial={{ x: '100%', opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: '100%', opacity: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="w-full md:w-[45%] lg:w-[45%] xl:w-[40%] border-l border-slate-200 bg-white flex flex-col z-20 shadow-[-20px_0_40px_rgba(0,0,0,0.02)]"
-              >
-            <div className="h-16 border-b border-slate-100 px-6 flex items-center justify-between shrink-0 bg-white sticky top-0 z-40 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => setSelectedEmail(null)} className="md:hidden">
-                  <ArrowRight className="w-5 h-5 rotate-180" />
-                </Button>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-tight text-indigo-600 flex items-center gap-2">
-                    <BrainCircuit className="w-4 h-4" /> Intelligence Cockpit
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">Decision Engine v2.4</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="rounded-xl border-slate-200 h-8 font-bold text-xs" onClick={() => setSelectedEmail(null)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-
-            <ScrollArea className="flex-1">
-              <div className="p-6 space-y-8">
-                {/* Header Information */}
-                <div className="space-y-6">
-                  <div className="space-y-3">
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedEmail} onOpenChange={(open) => !open && setSelectedEmail(null)}>
+        <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 overflow-hidden bg-slate-50">
+          {selectedEmail && (
+            <>
+              <div className="flex-1 overflow-auto flex flex-col">
+                <div className="px-6 py-4 border-b border-slate-200 bg-white">
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <DialogTitle className="text-lg font-bold text-slate-800 truncate">{selectedEmail.subject}</DialogTitle>
                     <div className="flex gap-2">
-                      <Badge className={`${getPriorityColor(selectedEmail.priority)} h-5 font-black uppercase text-[9px] border shadow-none px-2 rounded-lg`}>
+                       <Badge variant="outline" className={`capitalize font-bold px-3 py-0.5 ${getPriorityColor(selectedEmail.priority)}`}>
                         {selectedEmail.priority}
                       </Badge>
-                      <Badge className={`${getSecurityColor(selectedEmail.security?.status)} h-5 font-black uppercase text-[9px] border shadow-none px-2 rounded-lg`}>
-                         {selectedEmail.security?.status}
+                      <Badge variant="outline" className={`capitalize font-bold px-3 py-0.5 shadow-sm border-2 ${getSecurityColor(selectedEmail.security?.status)}`}>
+                        {selectedEmail.security?.status}
                       </Badge>
                     </div>
-                    <h2 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{selectedEmail.subject}</h2>
-                    
-                    <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
-                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
-                        <AvatarFallback className="bg-indigo-600 text-white font-black text-xs">
-                          {selectedEmail.sender[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-black text-slate-900 truncate tracking-tight">{selectedEmail.sender}</span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
-                           Ingested {formatDistanceToNow(new Date(selectedEmail.received_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* AI Recommendation Banner */}
-                   <div className="bg-slate-950 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Sparkles className="w-20 h-20" />
-                    </div>
-                    <div className="relative z-10 space-y-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-900/50">
-                          <Zap className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Founder Co-Pilot Mode</p>
-                          <h3 className="text-sm font-black text-white tracking-tight">AI Strategy Recommendations</h3>
-                        </div>
-                      </div>
-                      
-                      <div className="text-xs text-indigo-100/90 leading-relaxed font-bold border-l-2 border-indigo-500/50 pl-4 py-1">
-                        Analysis complete. This candidate aligns with current high-growth openings. High match confidence detected.
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <Button className="bg-indigo-600 text-white hover:bg-indigo-500 font-black text-xs h-11 rounded-2xl border-0 shadow-xl shadow-indigo-900/40">
-                          Send Outreach
-                        </Button>
-                        <Button variant="outline" className="bg-transparent border-slate-700 text-slate-300 hover:bg-slate-900 hover:text-white font-bold text-xs h-11 rounded-2xl">
-                          Delegate Triage
-                        </Button>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
-                {/* Intelligence Insights */}
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Match Score</span>
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-slate-900">{selectedEmail.match_score?.score || 0}</span>
-                        <span className="text-xs font-black text-slate-400">%</span>
-                      </div>
-                      <Progress value={selectedEmail.match_score?.score || 0} className="h-1.5 bg-slate-50" />
-                    </div>
-
-                    <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trust Level</span>
-                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 text-[8px] h-4 border-indigo-100 font-black">VERIFIED</Badge>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-lg font-black text-slate-900 leading-tight">High Reliability</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Known Vendor</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Detailed Intelligence Tabs */}
-                <Tabs defaultValue="outreach" className="w-full">
-                  <TabsList className="w-full bg-slate-50 p-1 rounded-2xl mb-6">
-                    <TabsTrigger value="outreach" className="flex-1 data-[state=active]:bg-white rounded-xl font-black text-[10px] py-2 shadow-sm uppercase transition-all">Outreach Agent</TabsTrigger>
-                    <TabsTrigger value="intelligence" className="flex-1 data-[state=active]:bg-white rounded-xl font-black text-[10px] py-2 shadow-sm uppercase transition-all">Deep Invariants</TabsTrigger>
-                    <TabsTrigger value="audit" className="flex-1 data-[state=active]:bg-white rounded-xl font-black text-[10px] py-2 shadow-sm uppercase transition-all">Audit</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="outreach" className="space-y-6">
-                    <div className="flex items-center justify-between">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Composer Tone</p>
-                       <div className="flex gap-1">
-                         {['Founder', 'Executive', 'Warm'].map(tone => (
-                           <button 
-                             key={tone} 
-                             onClick={() => setOutreachTone(tone)}
-                             className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${
-                               outreachTone === tone ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                             }`}
+                <div className="flex-1 p-6">
+                  {selectedEmail.security?.status !== 'Safe' && (
+                    <div className={`mb-6 p-4 rounded-xl border-2 flex items-start gap-4 shadow-sm ${selectedEmail.security?.status === 'Phishing' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                      <ShieldCheck className={`w-6 h-6 shrink-0 ${selectedEmail.security?.status === 'Phishing' ? 'text-rose-600' : 'text-amber-600'}`} />
+                      <div>
+                        <p className="font-bold text-sm mb-1 uppercase tracking-tight">Security Analytics: {selectedEmail.security?.status} Identified</p>
+                        <p className="text-sm opacity-90 leading-snug">{selectedEmail.security?.reason || "This email was flagged by HireNestOS intelligence layer."}</p>
+                        <div className="mt-3 flex gap-2">
+                           <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="bg-white hover:bg-slate-50 border-slate-200 text-xs shadow-sm h-8"
+                            onClick={() => handleUpdateInteraction(selectedEmail.id, { security_status: 'Safe', action: 'mark_safe', feedback: 'False positive flag' })}
                            >
-                             {tone}
-                           </button>
-                         ))}
-                       </div>
-                    </div>
-
-                    <div className="bg-indigo-50/30 rounded-3xl border-2 border-indigo-100 overflow-hidden shadow-sm group">
-                      <div className="p-1 border-b border-indigo-100 flex items-center justify-between bg-white/50">
-                        <div className="flex items-center gap-2 px-3 py-2">
-                           <Avatar className="h-6 w-6">
-                             <AvatarFallback className="bg-indigo-100 text-indigo-700 text-[8px] font-black">AI</AvatarFallback>
-                           </Avatar>
-                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Drafting Agent</span>
+                            Mark as Safe
+                           </Button>
+                           <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="text-xs shadow-sm h-8"
+                            onClick={() => setSelectedEmail(null)}
+                           >
+                            Delete Payload
+                           </Button>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-300 hover:text-indigo-600" onClick={() => setIsDraftEditable(!isDraftEditable)}>
-                           {isDraftEditable ? <CheckCircle2 className="w-4 h-4" /> : <Plus className="w-4 h-4 rotate-45" />}
-                        </Button>
                       </div>
-                      <div className="p-6">
-                        {isDraftEditable ? (
-                          <textarea 
-                            className="w-full h-64 bg-transparent border-0 focus:ring-0 text-sm font-bold text-slate-800 leading-relaxed resize-none p-0 outline-none"
-                            value={selectedEmail.outreach_draft || ''}
-                            onChange={(e) => {
-                              if (selectedEmail) {
-                                setSelectedEmail({...selectedEmail, outreach_draft: e.target.value});
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="text-sm font-bold text-slate-800 leading-relaxed min-h-[16rem]">
-                             {selectedEmail.outreach_draft}
+                    </div>
+                  )}
+
+                  <Tabs defaultValue="payload" className="w-full">
+                    <TabsList className="mb-6 grid w-full grid-cols-3 max-w-[500px] bg-slate-200/50 p-1">
+                      <TabsTrigger value="payload">Intelligence Layer</TabsTrigger>
+                      <TabsTrigger value="audit">Operational Audit</TabsTrigger>
+                      <TabsTrigger value="history">Interaction History</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="payload" className="mt-0">
+                      <div className="grid gap-6">
+                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                          <div className="grid grid-cols-[80px_1fr] items-center text-sm mb-2">
+                            <span className="font-semibold text-slate-500">From</span>
+                            <span className="text-slate-900 font-medium">{selectedEmail.sender}</span>
+                          </div>
+                          <div className="grid grid-cols-[80px_1fr] items-center text-sm mb-2">
+                            <span className="font-semibold text-slate-500">Subject</span>
+                            <span className="text-slate-900">{selectedEmail.subject}</span>
+                          </div>
+                          <div className="grid grid-cols-[80px_1fr] items-center text-sm">
+                            <span className="font-semibold text-slate-500">Time</span>
+                            <span className="text-slate-900">{new Date(selectedEmail.received_at).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 mb-3">AI Summary</h4>
+                          <p className="text-sm text-slate-700 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            {selectedEmail.summary}
+                          </p>
+                        </div>
+
+                        {/* Top Signals Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Card className="border-slate-200 shadow-sm overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-slate-50 bg-slate-50/50">
+                              <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-slate-500">
+                                <Activity className="w-3 h-3 text-indigo-600" />
+                                AI Match Analytics
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                              {selectedEmail.match_score ? (
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center font-black text-sm shrink-0 ${
+                                      selectedEmail.match_score.score > 80 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                                      selectedEmail.match_score.score > 50 ? 'border-amber-500 text-amber-700 bg-amber-50' :
+                                      'border-rose-500 text-rose-700 bg-rose-50'
+                                    }`}>
+                                      {selectedEmail.match_score.score}%
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-slate-700 font-bold leading-tight">{selectedEmail.match_score.reasoning}</p>
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {selectedEmail.match_score.gaps.slice(0, 3).map((gap, i) => (
+                                          <Badge key={i} variant="outline" className="text-[9px] bg-rose-50/50 text-rose-600 border-rose-100 py-0 px-1">
+                                            {gap}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="py-2 text-center text-slate-400 text-[10px] italic">
+                                  Standard Triage Mode (No Match Required)
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+
+                          <Card className="border-slate-200 shadow-sm overflow-hidden">
+                            <CardHeader className="pb-3 border-b border-slate-50 bg-slate-50/50">
+                              <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-slate-500">
+                                <ShieldCheck className="w-3 h-3 text-blue-600" />
+                                Vendor Intelligence
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                              {selectedEmail.vendor_intelligence ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Trust Level</p>
+                                    <div className="flex items-center gap-1">
+                                      <div className={`w-2 h-2 rounded-full ${selectedEmail.vendor_intelligence.isKnownVendor ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                      <span className="text-xs font-bold">{selectedEmail.vendor_intelligence.isKnownVendor ? 'Verified' : 'Cold'}</span>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Quality</p>
+                                    <span className="text-xs font-bold text-indigo-600">{selectedEmail.vendor_intelligence.submissionQuality}</span>
+                                  </div>
+                                  <div className="col-span-2">
+                                     <div className="flex justify-between items-center mb-1">
+                                      <p className="text-[9px] font-bold text-slate-400 uppercase">Spam Risk</p>
+                                      <span className="text-[9px] font-bold text-slate-600">{Math.round(selectedEmail.vendor_intelligence.spamLikelihood * 100)}%</span>
+                                     </div>
+                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full ${selectedEmail.vendor_intelligence.spamLikelihood > 0.4 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                        style={{ width: `${selectedEmail.vendor_intelligence.spamLikelihood * 100}%` }}
+                                      />
+                                     </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="py-2 text-center text-slate-400 text-[10px] italic">
+                                  Historical Analytics Pending
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {selectedEmail.metadata && Object.values(selectedEmail.metadata).some(val => val !== null) && (
+                          <Card className="border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
+                             <CardHeader className="pb-2 bg-slate-50/30">
+                               <CardTitle className="text-xs font-bold text-slate-600 uppercase tracking-tight">Recruitment Signal Extraction</CardTitle>
+                             </CardHeader>
+                             <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
+                               {selectedEmail.metadata.candidate_name && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Candidate</p>
+                                   <p className="text-xs font-bold text-slate-900 truncate">{selectedEmail.metadata.candidate_name}</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.role && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Role</p>
+                                   <p className="text-xs font-bold text-slate-900 truncate">{selectedEmail.metadata.role}</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.experienceYears && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Exp.</p>
+                                   <p className="text-xs font-bold text-slate-900">{selectedEmail.metadata.experienceYears} Years</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.expectedCTC && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Exp. CTC</p>
+                                   <p className="text-xs font-bold text-indigo-600">{selectedEmail.metadata.expectedCTC}</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.noticePeriodDays !== undefined && selectedEmail.metadata.noticePeriodDays !== null && (
+                                 <div className="bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Notice</p>
+                                   <p className="text-xs font-bold text-slate-900">{selectedEmail.metadata.noticePeriodDays} Days</p>
+                                 </div>
+                               )}
+                               {selectedEmail.metadata.skills && (
+                                 <div className="col-span-2 bg-white border border-slate-100 rounded p-2 shadow-sm">
+                                   <p className="text-[9px] uppercase font-bold text-slate-400 mb-0.5">Tech Stack</p>
+                                   <div className="flex flex-wrap gap-1">
+                                     {(typeof selectedEmail.metadata.skills === 'string' ? JSON.parse(selectedEmail.metadata.skills) as string[] : selectedEmail.metadata.skills as string[]).map((s, i) => (
+                                       <span key={i} className="text-[10px] font-medium bg-slate-100 px-1 rounded text-slate-700">{s}</span>
+                                     ))}
+                                   </div>
+                                 </div>
+                               )}
+                             </CardContent>
+                          </Card>
+                        )}
+
+                        {selectedEmail.action_items && selectedEmail.action_items.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900 mb-3">Workflow Tasks</h4>
+                            <ul className="space-y-2">
+                              {selectedEmail.action_items.map((item, idx) => (
+                                <li key={idx} className="flex items-start gap-3 justify-start text-sm text-slate-700 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                  <div className="mt-1 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-300">
+                                    <CheckCircle2 className="w-3 h-3 text-slate-400" />
+                                  </div>
+                                  <span className="font-medium text-slate-800">{item}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         )}
-                      </div>
-                      <div className="p-4 bg-white/50 border-t border-indigo-100 flex items-center justify-between">
-                         <div className="flex -space-x-2">
-                           {[1,2,3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white" />)}
-                         </div>
-                         <Button className="bg-slate-900 text-white hover:bg-slate-800 h-10 px-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl border-0">
-                           Approve & Release
-                         </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
 
-                  <TabsContent value="intelligence" className="space-y-6">
-                     <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Signal Extraction</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                           {selectedEmail.metadata ? Object.entries(selectedEmail.metadata).map(([key, val]) => (
-                             val && (
-                               <div key={key} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm border-l-2 border-l-indigo-400">
-                                 <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{key.replace(/_/g, ' ')}</p>
-                                 <p className="text-xs font-black text-slate-900 truncate">{String(val)}</p>
-                               </div>
-                             )
-                           )) : (
-                             <p className="text-xs text-slate-400 italic font-bold">No structured metadata available.</p>
-                           )}
+                        {selectedEmail.outreach_draft && (
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center">
+                              <ShieldCheck className="w-4 h-4 mr-1 text-emerald-600" />
+                              CEO/Staffing Head Outreach Draft
+                            </h4>
+                            <p className="text-sm text-slate-800 leading-relaxed bg-emerald-50 p-5 rounded-xl border border-emerald-100 uppercase-style-for-fun font-medium shadow-sm">
+                              {selectedEmail.outreach_draft}
+                            </p>
+                          </div>
+                        )}
+
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 mb-3">Original Ingestion Payload</h4>
+                          <div className="w-full rounded-xl border border-slate-200 p-5 bg-white shadow-sm min-h-[150px]">
+                            <pre className="text-xs text-slate-700 font-mono whitespace-pre-wrap">{selectedEmail.body}</pre>
+                          </div>
                         </div>
-                     </div>
 
-                     <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Derived Tasks</h4>
-                        <div className="space-y-2">
-                           {selectedEmail.action_items?.map((item, idx) => (
-                             <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-all cursor-pointer shadow-sm">
-                                <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-all">
-                                   <Activity className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
-                                </div>
-                                <span className="text-[11px] font-bold text-slate-700 flex-1">{item}</span>
-                                <Plus className="w-4 h-4 text-slate-200 group-hover:text-indigo-400" />
-                             </div>
-                           ))}
-                        </div>
-                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="audit" className="space-y-6">
-                     <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="audit" className="mt-0">
+                      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                        <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                          <Activity className="w-5 h-5 text-indigo-600" />
+                          OmniMail Routing Timeline
+                        </h3>
+                        
                         <div className="relative border-l-2 border-slate-100 ml-4 space-y-8">
-                           <div className="relative pl-6">
-                              <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-indigo-600 border-2 border-white flex items-center justify-center shadow-md shadow-indigo-200">
-                                 <CheckCircle2 className="w-3 h-3 text-white" />
-                              </div>
-                              <h4 className="text-sm font-black text-slate-900 tracking-tight">Ingress Point Reached</h4>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Confirmed Layer 1</p>
-                           </div>
-                           <div className="relative pl-6">
-                              <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center">
-                                 <Sparkles className="w-3 h-3 text-slate-500" />
-                              </div>
-                              <h4 className="text-sm font-black text-slate-900 tracking-tight">Gemini Reasoning v3</h4>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Logic Execution Success</p>
-                           </div>
-                           <div className="relative pl-6">
-                              <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center">
-                                 <Webhook className="w-3 h-3 text-slate-400" />
-                              </div>
-                              <h4 className="text-sm font-black text-slate-900 tracking-tight">Relay Finalized</h4>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: OK 200</p>
-                           </div>
-                        </div>
-                     </div>
-                  </TabsContent>
-                </Tabs>
+                          {/* Step 1 */}
+                          <div className="relative pl-6">
+                            <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center">
+                              <CheckCircle2 className="w-3 h-3 text-slate-500" />
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-800">Inbound Communication Received</h4>
+                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date(selectedEmail.received_at).toLocaleString()}
+                            </p>
+                            <div className="mt-2 text-xs bg-slate-50 p-2 rounded-md border border-slate-100 text-slate-600">
+                              Source: GMail Connector
+                            </div>
+                          </div>
 
-                <div className="pt-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Original Raw Content</h4>
-                  <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                    <pre className="text-[11px] font-bold text-slate-400 font-mono whitespace-pre-wrap leading-relaxed">
-                       {selectedEmail.body}
-                    </pre>
-                  </div>
+                          {/* Step 2 */}
+                          <div className="relative pl-6">
+                            <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-indigo-100 border-2 border-indigo-500 flex items-center justify-center">
+                              <CheckCircle2 className="w-3 h-3 text-indigo-600" />
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-800">Intelligence Layer Execution</h4>
+                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              +{Math.floor(Math.random() * 2000 + 500)}ms
+                            </p>
+                            <div className="mt-2 text-xs bg-indigo-50/50 p-2 rounded-md border border-indigo-100/50 text-indigo-800 flex flex-col gap-1">
+                              <span>Provider: Gemini 3.1 Pro Engine</span>
+                              <span className="font-medium">Confidence Score: 0.93</span>
+                              <span>Entities Extracted: {selectedEmail.metadata ? Object.keys(selectedEmail.metadata).length : 0} found</span>
+                            </div>
+                          </div>
+
+                          {/* Step 3 */}
+                          <div className="relative pl-6">
+                            <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center">
+                              <Navigation className="w-3 h-3 text-emerald-600" />
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-800">Workflow Routing Engine</h4>
+                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              +{Math.floor(Math.random() * 50 + 10)}ms
+                            </p>
+                            <div className="mt-2 text-xs bg-emerald-50 p-3 rounded-md border border-emerald-200 text-emerald-900 grid gap-2">
+                              <div><span className="font-semibold">Evaluated Intent:</span> <span className="uppercase">{selectedEmail.intent}</span></div>
+                              {selectedEmail.intent.toLowerCase().includes('requirement') || selectedEmail.intent.toLowerCase().includes('urgent') ? (
+                                <div><span className="font-semibold">Assignment:</span> Alex Recruiter (Enterprise Team)</div>
+                              ) : selectedEmail.intent.toLowerCase().includes('submission') ? (
+                                <div><span className="font-semibold">Assignment:</span> Sam Sourcer (Technical)</div>
+                              ) : (
+                                <div><span className="font-semibold">Assignment:</span> General Operations Queue</div>
+                              )}
+                              <div className="flex border-t border-emerald-200/50 pt-2 mt-1">
+                                <span className="bg-emerald-600 text-white px-2 py-0.5 rounded font-medium shadow-sm">Status: Assigned & Routed</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Step 4 */}
+                          <div className="relative pl-6">
+                            {webhooks.length > 0 && webhooks.filter(w => w.active).length > 0 ? (
+                               <>
+                                <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-blue-100 border-2 border-blue-500 flex items-center justify-center">
+                                  <Webhook className="w-3 h-3 text-blue-600" />
+                                </div>
+                                <h4 className="text-sm font-bold text-slate-800">OS Connector Delivery</h4>
+                                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  +{Math.floor(Math.random() * 300 + 100)}ms
+                                </p>
+                                <div className="mt-2 text-xs bg-slate-50 p-2 rounded-md border border-slate-200 text-slate-700">
+                                  Payload delivered to {webhooks.filter(w => w.active).length} active webhook(s):
+                                  <ul className="mt-1 ml-4 list-disc space-y-0.5 text-slate-500">
+                                    {webhooks.filter(w => w.active).map(w => (
+                                      <li key={w.id} className="font-mono">{w.name} - 200 OK</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                               </>
+                            ) : (
+                               <>
+                                <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center">
+                                  <Webhook className="w-3 h-3 text-slate-400" />
+                                </div>
+                                <h4 className="text-sm font-bold text-slate-500">OS Connector Delivery</h4>
+                                <p className="text-xs text-slate-400 mt-1">No active connectors to route to.</p>
+                               </>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="history" className="mt-0">
+                      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                        <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-indigo-600" />
+                          Manual Override & AI Training
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Set Priority</p>
+                            <div className="flex flex-wrap gap-2">
+                              {['Urgent', 'Important', 'To Read', 'Archived'].map(p => (
+                                <Button 
+                                  key={p}
+                                  variant="outline" 
+                                  size="sm" 
+                                  className={`text-xs h-8 border-slate-200 ${selectedEmail.priority === p ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-slate-50'}`}
+                                  onClick={() => handleUpdateInteraction(selectedEmail.id, { priority: p, action: `set_priority_${p.toLowerCase()}` })}
+                                >
+                                  {p}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Security Feedback</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className={`text-xs h-8 ${selectedEmail.security?.status === 'Safe' ? 'bg-emerald-600 text-white' : ''}`}
+                                onClick={() => handleUpdateInteraction(selectedEmail.id, { security_status: 'Safe', action: 'mark_safe' })}
+                              >
+                                Mark Safe
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className={`text-xs h-8 ${selectedEmail.security?.status === 'Phishing' ? 'bg-rose-600 text-white' : ''}`}
+                                onClick={() => handleUpdateInteraction(selectedEmail.id, { security_status: 'Phishing', action: 'mark_phishing' })}
+                              >
+                                Mark Phishing
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className={`text-xs h-8 ${selectedEmail.security?.status === 'Spam' ? 'bg-amber-600 text-white' : ''}`}
+                                onClick={() => handleUpdateInteraction(selectedEmail.id, { security_status: 'Spam', action: 'mark_spam' })}
+                              >
+                                Mark Spam
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 italic text-slate-500 text-xs text-center">
+                          Future filters will adapt to these changes using OmniMail's context-aware interaction history learning.
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </div>
-            </ScrollArea>
-          </motion.aside>
-        ) : (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 hidden md:flex flex-col items-center justify-center p-12 text-center bg-slate-50/[0.02]"
-          >
-             <div className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-slate-100 mb-8 overflow-hidden relative group">
-                <div className="absolute inset-0 bg-indigo-600 translate-y-24 group-hover:translate-y-0 transition-transform duration-500" />
-                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=HirN" alt="AI" className="w-12 h-12 relative z-10 group-hover:invert transition-all" />
-             </div>
-             <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Talent Intelligence Center</h3>
-             <p className="text-xs font-bold text-slate-400 max-w-[240px] leading-relaxed">
-                Select an inbound signal to activate the premium decision cockpit and agent network.
-             </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  </div>
-</TooltipProvider>
   );
 }
 
