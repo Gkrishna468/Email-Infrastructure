@@ -69,7 +69,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
 
-  // 1. Auth Listener
+  // 1. Auth Listener and URL Param Check
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -77,6 +77,15 @@ export default function App() {
         checkGmailStatus(u.uid);
       }
     });
+
+    // Check for URL parameters (e.g. from redirect)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmail') === 'connected') {
+      setIsGmailConnected(true);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     return unsubscribe;
   }, []);
 

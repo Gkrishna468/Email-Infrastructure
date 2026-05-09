@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { getAuthUrl, getOAuth2Client, saveTokens, getTokens } from "./server/auth/google.js";
 import { GoogleWorkspaceConnector } from "./server/core/connectors/GoogleWorkspaceConnector.js";
-import { getFirestoreAdmin } from "./server/firebaseAdmin.js";
+import { db } from "./server/firebaseAdmin.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,24 +58,40 @@ async function startServer() {
       await saveTokens(tokens, userId);
       console.log("✅ Tokens stored in Firestore for user:", userId);
 
+      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+      
       res.send(`
         <html>
-          <body>
-            <script>
-              window.opener.postMessage({ type: 'GMAIL_CONNECTED' }, '*');
-              window.close();
-            </script>
-            <h1>Connected!</h1>
-            <p>You can close this window now.</p>
+          <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
+            <div style="text-align: center; padding: 2rem; background: white; border-radius: 1rem; shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+              <h1 style="color: #4f46e5; margin-bottom: 0.5rem;">Connected!</h1>
+              <p style="color: #64748b;">Closing this window and returning to OmniMail...</p>
+              <script>
+                if (window.opener) {
+                  window.opener.postMessage({ type: 'GMAIL_CONNECTED' }, '*');
+                  setTimeout(() => window.close(), 1000);
+                } else {
+                  window.location.href = "${appUrl}?gmail=connected";
+                }
+              </script>
+            </div>
           </body>
         </html>
       `);
     } catch (err: any) {
       console.error('❌ OAuth callback error:', err);
+      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
       res.status(500).send(`
-        <h1>Authentication failed</h1>
-        <p>Error: ${err instanceof Error ? err.message : String(err)}</p>
-        <pre>${err?.stack || ""}</pre>
+        <html>
+          <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #fef2f2;">
+             <div style="text-align: center; padding: 2rem; background: white; border-radius: 1rem; shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 500px;">
+              <h1 style="color: #ef4444; margin-bottom: 0.5rem;">Authentication Failed</h1>
+              <p style="color: #64748b;">${err instanceof Error ? err.message : String(err)}</p>
+              <a href="${appUrl}?gmail=failed" style="display: inline-block; margin-top: 1rem; color: #4f46e5; text-decoration: none; font-weight: bold;">Return to App</a>
+              <pre style="text-align: left; background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; overflow: auto; font-size: 10px;">${err?.stack || ""}</pre>
+            </div>
+          </body>
+        </html>
       `);
     }
   });
@@ -95,28 +111,26 @@ async function startServer() {
   app.post('/api/gmail/fetch', async (req, res) => {
     try {
       const limit = Number(req.query.limit) || 20;
-      const userId = req.query.userId as string;
+      const userId = req.body.userId || req.query.userId;
       
       if (!userId) return res.status(400).json({ error: "Missing userId" });
 
       const emails = await GoogleWorkspaceConnector.fetchLatestEmails(limit, userId);
-      const db = getFirestoreAdmin();
       const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
       const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       let count = 0;
       for (const email of emails) {
         const snippet = email.snippet || "";
-        const subject = email.payload?.headers?.find(h => h.name === 'Subject')?.value || "No Subject";
-        const from = email.payload?.headers?.find(h => h.name === 'From')?.value || "Unknown";
-        const body = snippet; // Simplification for now
+        const subject = email.payload?.headers?.find((h: any) => h.name === 'Subject')?.value || "No Subject";
+        const from = email.payload?.headers?.find((h: any) => h.name === 'From')?.value || "Unknown";
+        const body = snippet;
 
         // AI Parsing
-        const prompt = `Analyze this email for recruitment. Candidate Name, Role, Match Score (0-100), Reasons. Return JSON. Email: ${subject} - ${body}`;
+        const prompt = `Analyze this email for recruitment. Return JSON with candidateName, role, score (0-100), reasons (array of strings). Email: ${subject} - ${body}`;
         const result = await model.generateContent(prompt);
         const text = result.response.text();
         
-        // Very basic JSON extraction from AI response
         let aiData = { candidateName: "Unknown", role: "Unknown", score: 0, reasons: [] };
         try {
           const jsonMatch = text.match(/\{.*\}/s);
@@ -124,7 +138,6 @@ async function startServer() {
         } catch (e) {}
 
         await db.collection("emails").add({
-          id: email.id,
           subject,
           snippet,
           from,
@@ -138,7 +151,10 @@ async function startServer() {
             candidateName: aiData.candidateName || "Extracted Name",
             role: aiData.role || "Extracted Role"
           },
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          priority: (aiData.score || 0) > 80 ? "Urgent" : "Normal",
+          securityStatus: "Safe",
+          outreachDraft: "Ready for drafting..."
         });
         count++;
       }

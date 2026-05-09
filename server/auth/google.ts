@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { getFirestoreAdmin } from '../firebaseAdmin.js';
+import { db } from '../firebaseAdmin.js';
 
 const COLLECTION_NAME = 'gmail_tokens';
 
@@ -25,15 +25,17 @@ export function getAuthUrl(userId: string) {
 }
 
 export async function saveTokens(tokens: any, userId: string) {
-  const db = getFirestoreAdmin();
   await db.collection(COLLECTION_NAME).doc(userId).set({
-    ...tokens,
+    access_token: tokens.access_token || "",
+    refresh_token: tokens.refresh_token || "",
+    expiry_date: tokens.expiry_date || 0,
+    scope: tokens.scope || "",
+    token_type: tokens.token_type || "",
     updatedAt: new Date().toISOString()
   });
 }
 
 export async function getTokens(userId: string) {
-  const db = getFirestoreAdmin();
   const doc = await db.collection(COLLECTION_NAME).doc(userId).get();
   if (!doc.exists) return null;
   return doc.data();
